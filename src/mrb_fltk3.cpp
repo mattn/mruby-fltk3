@@ -178,6 +178,29 @@ mrb_fltk3_widget_label_set(mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
+mrb_fltk3_widget_labelfont_get(mrb_state *mrb, mrb_value self)
+{
+  mrb_value value_context;
+  mrb_fltk3_context* context = NULL;
+  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
+  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  return mrb_fixnum_value(context->w->labelfont());
+}
+
+static mrb_value
+mrb_fltk3_widget_labelfont_set(mrb_state *mrb, mrb_value self)
+{
+  mrb_value value_context;
+  mrb_fltk3_context* context = NULL;
+  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
+  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  mrb_value labelfont;
+  mrb_get_args(mrb, "i", &labelfont);
+  context->w->labelfont(mrb_fixnum(labelfont));
+  return mrb_nil_value();
+}
+
+static mrb_value
 mrb_fltk3_widget_box_get(mrb_state *mrb, mrb_value self)
 {
   mrb_value value_context;
@@ -564,6 +587,8 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   mrb_define_method(mrb, _class_fltk3_Widget, "h=", mrb_fltk3_widget_h_set, ARGS_REQ(1));
   mrb_define_method(mrb, _class_fltk3_Widget, "label", mrb_fltk3_widget_label_get, ARGS_NONE());
   mrb_define_method(mrb, _class_fltk3_Widget, "label=", mrb_fltk3_widget_label_set, ARGS_REQ(1));
+  mrb_define_method(mrb, _class_fltk3_Widget, "labelfont", mrb_fltk3_widget_labelfont_get, ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Widget, "labelfont=", mrb_fltk3_widget_labelfont_set, ARGS_REQ(1));
   mrb_define_method(mrb, _class_fltk3_Widget, "box", mrb_fltk3_widget_box_get, ARGS_NONE());
   mrb_define_method(mrb, _class_fltk3_Widget, "box=", mrb_fltk3_widget_box_set, ARGS_REQ(1));
   mrb_define_method(mrb, _class_fltk3_Widget, "hide", mrb_fltk3_widget_hide, ARGS_NONE());
