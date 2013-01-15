@@ -9,6 +9,7 @@
 #include <mruby/variable.h>
 #include <fltk3/DoubleWindow.h>
 #include <fltk3/Window.h>
+#include <fltk3/Box.h>
 #include <fltk3/Button.h>
 #include <fltk3/Input.h>
 #include <fltk3/message.h>
@@ -177,6 +178,39 @@ mrb_fltk3_widget_label_set(mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
+mrb_fltk3_widget_box_get(mrb_state *mrb, mrb_value self)
+{
+  mrb_value value_context;
+  mrb_fltk3_context* context = NULL;
+  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
+  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  struct RClass* _class_fltk3 = mrb_class_get(mrb, "FLTK3");
+  struct RClass* _class_fltk3_Box = mrb_class_ptr(mrb_const_get(mrb, mrb_obj_value(_class_fltk3), mrb_intern(mrb, "Box")));
+  mrb_value args[1];
+  args[0] = mrb_obj_value(
+    Data_Wrap_Struct(mrb, mrb->object_class,
+    &fltk3_context_type, (void*) context->w->box()));
+  return mrb_class_new_instance(mrb, 1, args, _class_fltk3_Box);
+}
+
+static mrb_value
+mrb_fltk3_widget_box_set(mrb_state *mrb, mrb_value self)
+{
+  mrb_value value_context;
+  mrb_fltk3_context* context = NULL;
+  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
+  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  mrb_value box;
+  mrb_get_args(mrb, "o", &box);
+  mrb_value box_value_context;
+  mrb_fltk3_context* box_context = NULL;
+  box_value_context = mrb_iv_get(mrb, box, mrb_intern(mrb, "context"));
+  Data_Get_Struct(mrb, box_value_context, &fltk3_context_type, box_context);
+  context->w->box((fltk3::Box*) box_context->w);
+  return mrb_nil_value();
+}
+
+static mrb_value
 mrb_fltk3_widget_show(mrb_state *mrb, mrb_value self)
 {
   mrb_value value_context;
@@ -251,6 +285,32 @@ mrb_fltk3_window_show(mrb_state *mrb, mrb_value self)
 }
 
 /*********************************************************
+ * FLTK3::Input
+ *********************************************************/
+static mrb_value
+mrb_fltk3_input_value_get(mrb_state *mrb, mrb_value self)
+{
+  mrb_value value_context;
+  mrb_fltk3_context* context = NULL;
+  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
+  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  return mrb_str_new_cstr(mrb, ((fltk3::Input*) context->w)->value());
+}
+
+static mrb_value
+mrb_fltk3_input_value_set(mrb_state *mrb, mrb_value self)
+{
+  mrb_value value_context;
+  mrb_fltk3_context* context = NULL;
+  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
+  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  mrb_value text;
+  mrb_get_args(mrb, "S", &text);
+  ((fltk3::Input*) context->w)->value(RSTRING_PTR(text));
+  return mrb_nil_value();
+}
+
+/*********************************************************
  * FLTK3::Group
  *********************************************************/
 static mrb_value
@@ -275,7 +335,33 @@ mrb_fltk3_group_end(mrb_state *mrb, mrb_value self)
   return mrb_nil_value();
 }
 
-#define DECLARE_WIDGET1(x)                                              \
+/*********************************************************
+ * FLTK3::*
+ *********************************************************/
+static mrb_value
+mrb_fltk3_run(mrb_state *mrb, mrb_value self)
+{
+  return mrb_fixnum_value(fltk3::run());
+}
+
+static mrb_value
+mrb_fltk3_alert(mrb_state *mrb, mrb_value self)
+{
+  mrb_value s;
+  mrb_get_args(mrb, "S", &s);
+  fltk3::alert(RSTRING_PTR(s));
+  return mrb_nil_value();
+}
+
+static mrb_value
+mrb_fltk3_ask(mrb_state *mrb, mrb_value self)
+{
+  mrb_value s;
+  mrb_get_args(mrb, "S", &s);
+  return fltk3::ask(RSTRING_PTR(s)) ? mrb_true_value() : mrb_false_value();
+}
+
+#define DECLARE_WIDGET(x)                                               \
 static mrb_value                                                        \
 mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                \
 {                                                                       \
@@ -304,7 +390,7 @@ mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                \
   return self;                                                          \
 }
 
-#define DECLARE_WIDGET2(x)                                              \
+#define DECLARE_WINDOW(x)                                               \
 static mrb_value                                                        \
 mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                \
 {                                                                       \
@@ -338,68 +424,122 @@ mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                \
   return self;                                                          \
 }
 
-DECLARE_WIDGET2(DoubleWindow)
-DECLARE_WIDGET2(Window)
-DECLARE_WIDGET1(Button)
-DECLARE_WIDGET1(Input)
-
-/*********************************************************
- * FLTK3::*
- *********************************************************/
 static mrb_value
-mrb_fltk3_run(mrb_state *mrb, mrb_value self)
+mrb_fltk3_Box_init(mrb_state *mrb, mrb_value self)
 {
-  return mrb_fixnum_value(fltk3::run());
+  mrb_value arg = mrb_nil_value();
+  mrb_get_args(mrb, "|o", &arg);
+  if (!mrb_nil_p(arg)) {
+    if (strcmp(mrb_obj_classname(mrb, arg), "fltk3_context"))
+      mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc fltk3::Box");
+    mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), arg);
+  }
+  return self;
 }
 
-static mrb_value
-mrb_fltk3_alert(mrb_state *mrb, mrb_value self)
-{
-  mrb_value s;
-  mrb_get_args(mrb, "S", &s);
-  fltk3::alert(RSTRING_PTR(s));
-  return mrb_nil_value();
+#define DECLARE_BOX(x)                                                  \
+static mrb_value                                                        \
+mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                \
+{                                                                       \
+  mrb_value arg = mrb_nil_value();                                      \
+  int argc;                                                             \
+  mrb_get_args(mrb, "|S", &arg);                                        \
+  mrb_fltk3_context* context =                                          \
+    (mrb_fltk3_context*) malloc(sizeof(mrb_fltk3_context));             \
+  if (!context) mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc memory");  \
+  memset(context, 0, sizeof(mrb_fltk3_context));                        \
+  context->instance = self;                                             \
+  context->mrb = mrb;                                                   \
+  context->w = (fltk3::Widget*) new fltk3::x (                          \
+    mrb_nil_p(arg) ? NULL : RSTRING_PTR(arg));                          \
+  mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), mrb_obj_value(      \
+    Data_Wrap_Struct(mrb, mrb->object_class,                            \
+    &fltk3_context_type, (void*) context)));                            \
+  return self;                                                          \
 }
 
-static mrb_value
-mrb_fltk3_ask(mrb_state *mrb, mrb_value self)
-{
-  mrb_value s;
-  mrb_get_args(mrb, "S", &s);
-  return fltk3::ask(RSTRING_PTR(s)) ? mrb_true_value() : mrb_false_value();
-}
+DECLARE_WIDGET(Widget)
+DECLARE_WINDOW(DoubleWindow)
+DECLARE_WINDOW(Window)
+DECLARE_WIDGET(Button)
+DECLARE_WIDGET(Input)
+
+DECLARE_BOX(NoBox)
+DECLARE_BOX(FlatBox)
+DECLARE_BOX(UpBox)
+DECLARE_BOX(DownBox)
+DECLARE_BOX(ThinUpBox)
+DECLARE_BOX(ThinDownBox)
+DECLARE_BOX(EngravedBox)
+DECLARE_BOX(EmbossedBox)
+DECLARE_BOX(BorderBox)
+DECLARE_BOX(ShadowBox)
+DECLARE_BOX(RoundedBox)
+DECLARE_BOX(RShadowBox)
+DECLARE_BOX(RFlatBox)
+DECLARE_BOX(RoundUpBox)
+DECLARE_BOX(RoundDownBox)
+DECLARE_BOX(DiamondUpBox)
+DECLARE_BOX(DiamondDownBox)
+DECLARE_BOX(OvalBox)
+DECLARE_BOX(OShadowBox)
+DECLARE_BOX(OFlatBox)
+DECLARE_BOX(PlasticUpBox)
+DECLARE_BOX(PlasticDownBox)
+DECLARE_BOX(PlasticThinUpBox)
+DECLARE_BOX(PlasticThinDownBox)
+DECLARE_BOX(PlasticRoundUpBox)
+DECLARE_BOX(PlasticRoundDownBox)
+DECLARE_BOX(ClassicUpBox)
+DECLARE_BOX(ClassicDownBox)
+DECLARE_BOX(ClassicThinUpBox)
+DECLARE_BOX(ClassicThinDownBox)
+DECLARE_BOX(ClassicRoundUpBox)
+DECLARE_BOX(ClassicRoundDownBox)
+DECLARE_BOX(BorderFrame)
+DECLARE_BOX(UpFrame)
+DECLARE_BOX(DownFrame)
+DECLARE_BOX(ThinUpFrame)
+DECLARE_BOX(ThinDownFrame)
+DECLARE_BOX(EngravedFrame)
+DECLARE_BOX(EmbossedFrame)
+DECLARE_BOX(ShadowFrame)
+DECLARE_BOX(RoundedFrame)
+DECLARE_BOX(OvalFrame)
+DECLARE_BOX(PlasticUpFrame)
+DECLARE_BOX(PlasticDownFrame)
+DECLARE_BOX(ClassicUpFrame)
+DECLARE_BOX(ClassicDownFrame)
+DECLARE_BOX(ClassicThinUpFrame)
+DECLARE_BOX(ClassicThinDownFrame)
 
 extern "C"
 {
 
 #define INHERIT_GROUP(x) \
   mrb_define_method(mrb, _class_fltk3_ ## x, "begin", mrb_fltk3_group_begin, ARGS_NONE()); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "end", mrb_fltk3_group_end, ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_ ## x, "end", mrb_fltk3_group_end, ARGS_NONE()); \
+  ARENA_RESTORE;
 
-#define INHERIT_WIDGET(x) \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "x", mrb_fltk3_widget_x_get, ARGS_NONE()); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "x=", mrb_fltk3_widget_x_set, ARGS_REQ(1)); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "y", mrb_fltk3_widget_y_get, ARGS_NONE()); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "y=", mrb_fltk3_widget_y_set, ARGS_REQ(1)); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "w", mrb_fltk3_widget_w_get, ARGS_NONE()); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "w=", mrb_fltk3_widget_w_set, ARGS_REQ(1)); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "h", mrb_fltk3_widget_h_get, ARGS_NONE()); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "h=", mrb_fltk3_widget_h_set, ARGS_REQ(1)); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "label", mrb_fltk3_widget_label_get, ARGS_NONE()); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "label=", mrb_fltk3_widget_label_set, ARGS_REQ(1)); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "hide", mrb_fltk3_widget_hide, ARGS_NONE()); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "visible", mrb_fltk3_widget_visible, ARGS_NONE()); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "callback", mrb_fltk3_widget_callback, ARGS_OPT(1));
-
-#define INHERIT_WIDGET_SHOW(x) \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "show", mrb_fltk3_widget_show, ARGS_NONE()); \
-
-#define INHERIT_WINDOW_SHOW(x) \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "show", mrb_fltk3_window_show, ARGS_OPT(1)); \
+#define INHERIT_INPUT_VALUE(x) \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "value", mrb_fltk3_input_value_get, ARGS_NONE()); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "value=", mrb_fltk3_input_value_set, ARGS_NONE()); \
+  ARENA_RESTORE;
 
 #define DEFINE_WIDGET(x) \
-  struct RClass* _class_fltk3_ ## x = mrb_define_class_under(mrb, _class_fltk3, # x, mrb->object_class); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "initialize", mrb_fltk3_ ## x ## _init, ARGS_ANY());
+  struct RClass* _class_fltk3_ ## x = mrb_define_class_under(mrb, _class_fltk3, # x, _class_fltk3_Widget); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "initialize", mrb_fltk3_ ## x ## _init, ARGS_ANY()); \
+  ARENA_RESTORE;
+
+#define DEFINE_WINDOW(x) \
+  struct RClass* _class_fltk3_ ## x = mrb_define_class_under(mrb, _class_fltk3, # x, _class_fltk3_Window); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "initialize", mrb_fltk3_ ## x ## _init, ARGS_ANY()); \
+  ARENA_RESTORE;
+
+#define DEFINE_BOX(x) \
+  struct RClass* _class_fltk3_ ## x = mrb_define_class_under(mrb, _class_fltk3, # x, _class_fltk3_Box); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "initialize", mrb_fltk3_ ## x ## _init, ARGS_ANY()); \
+  ARENA_RESTORE;
 
 void
 mrb_mruby_fltk3_gem_init(mrb_state* mrb)
@@ -411,25 +551,89 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   mrb_define_module_function(mrb, _class_fltk3, "ask", mrb_fltk3_ask, ARGS_REQ(1));
   ARENA_RESTORE;
 
-  DEFINE_WIDGET(DoubleWindow)
-  INHERIT_WIDGET(DoubleWindow)
-  INHERIT_GROUP(DoubleWindow)
-  INHERIT_WINDOW_SHOW(DoubleWindow)
-
-  DEFINE_WIDGET(Window)
-  INHERIT_WIDGET(Window)
-  INHERIT_GROUP(Window)
-  INHERIT_WINDOW_SHOW(Window)
-
-  DEFINE_WIDGET(Button)
-  INHERIT_WIDGET(Button)
-  INHERIT_WIDGET_SHOW(Button)
-
-  DEFINE_WIDGET(Input)
-  INHERIT_WIDGET(Input)
-  INHERIT_WIDGET_SHOW(Input)
-
+  struct RClass* _class_fltk3_Widget = mrb_define_class_under(mrb, _class_fltk3, "Widget", mrb->object_class);
+  mrb_define_method(mrb, _class_fltk3_Widget, "initialize", mrb_fltk3_Widget_init, ARGS_ANY());
+  mrb_define_method(mrb, _class_fltk3_Widget, "show", mrb_fltk3_widget_show, ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Widget, "x", mrb_fltk3_widget_x_get, ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Widget, "x=", mrb_fltk3_widget_x_set, ARGS_REQ(1));
+  mrb_define_method(mrb, _class_fltk3_Widget, "y", mrb_fltk3_widget_y_get, ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Widget, "y=", mrb_fltk3_widget_y_set, ARGS_REQ(1));
+  mrb_define_method(mrb, _class_fltk3_Widget, "w", mrb_fltk3_widget_w_get, ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Widget, "w=", mrb_fltk3_widget_w_set, ARGS_REQ(1));
+  mrb_define_method(mrb, _class_fltk3_Widget, "h", mrb_fltk3_widget_h_get, ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Widget, "h=", mrb_fltk3_widget_h_set, ARGS_REQ(1));
+  mrb_define_method(mrb, _class_fltk3_Widget, "label", mrb_fltk3_widget_label_get, ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Widget, "label=", mrb_fltk3_widget_label_set, ARGS_REQ(1));
+  mrb_define_method(mrb, _class_fltk3_Widget, "box", mrb_fltk3_widget_box_get, ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Widget, "box=", mrb_fltk3_widget_box_set, ARGS_REQ(1));
+  mrb_define_method(mrb, _class_fltk3_Widget, "hide", mrb_fltk3_widget_hide, ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Widget, "visible", mrb_fltk3_widget_visible, ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Widget, "callback", mrb_fltk3_widget_callback, ARGS_OPT(1));
   ARENA_RESTORE;
+
+  DEFINE_WIDGET(Button);
+  DEFINE_WIDGET(Input);
+  INHERIT_INPUT_VALUE(Input);
+
+  struct RClass* _class_fltk3_Window = mrb_define_class_under(mrb, _class_fltk3, "Window", _class_fltk3_Widget);
+  mrb_define_method(mrb, _class_fltk3_Window, "initialize", mrb_fltk3_Window_init, ARGS_ANY());
+  mrb_define_method(mrb, _class_fltk3_Window, "show", mrb_fltk3_window_show, ARGS_OPT(1));
+  INHERIT_GROUP(Window);
+
+  DEFINE_WINDOW(DoubleWindow);
+
+  struct RClass* _class_fltk3_Box = mrb_define_class_under(mrb, _class_fltk3, "Box", _class_fltk3_Widget);
+  mrb_define_method(mrb, _class_fltk3_Box, "initialize", mrb_fltk3_Box_init, ARGS_ANY());
+  ARENA_RESTORE;
+
+  DEFINE_BOX(NoBox);
+  DEFINE_BOX(FlatBox);
+  DEFINE_BOX(UpBox);
+  DEFINE_BOX(DownBox);
+  DEFINE_BOX(ThinUpBox);
+  DEFINE_BOX(ThinDownBox);
+  DEFINE_BOX(EngravedBox);
+  DEFINE_BOX(EmbossedBox);
+  DEFINE_BOX(BorderBox);
+  DEFINE_BOX(ShadowBox);
+  DEFINE_BOX(RoundedBox);
+  DEFINE_BOX(RShadowBox);
+  DEFINE_BOX(RFlatBox);
+  DEFINE_BOX(RoundUpBox);
+  DEFINE_BOX(RoundDownBox);
+  DEFINE_BOX(DiamondUpBox);
+  DEFINE_BOX(DiamondDownBox);
+  DEFINE_BOX(OvalBox);
+  DEFINE_BOX(OShadowBox);
+  DEFINE_BOX(OFlatBox);
+  DEFINE_BOX(PlasticUpBox);
+  DEFINE_BOX(PlasticDownBox);
+  DEFINE_BOX(PlasticThinUpBox);
+  DEFINE_BOX(PlasticThinDownBox);
+  DEFINE_BOX(PlasticRoundUpBox);
+  DEFINE_BOX(PlasticRoundDownBox);
+  DEFINE_BOX(ClassicUpBox);
+  DEFINE_BOX(ClassicDownBox);
+  DEFINE_BOX(ClassicThinUpBox);
+  DEFINE_BOX(ClassicThinDownBox);
+  DEFINE_BOX(ClassicRoundUpBox);
+  DEFINE_BOX(ClassicRoundDownBox);
+  DEFINE_BOX(BorderFrame);
+  DEFINE_BOX(UpFrame);
+  DEFINE_BOX(DownFrame);
+  DEFINE_BOX(ThinUpFrame);
+  DEFINE_BOX(ThinDownFrame);
+  DEFINE_BOX(EngravedFrame);
+  DEFINE_BOX(EmbossedFrame);
+  DEFINE_BOX(ShadowFrame);
+  DEFINE_BOX(RoundedFrame);
+  DEFINE_BOX(OvalFrame);
+  DEFINE_BOX(PlasticUpFrame);
+  DEFINE_BOX(PlasticDownFrame);
+  DEFINE_BOX(ClassicUpFrame);
+  DEFINE_BOX(ClassicDownFrame);
+  DEFINE_BOX(ClassicThinUpFrame);
+  DEFINE_BOX(ClassicThinDownFrame);
 }
 
 }
