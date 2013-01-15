@@ -7,6 +7,7 @@
 #include <mruby/hash.h>
 #include <mruby/class.h>
 #include <mruby/variable.h>
+#include <fltk3/DoubleWindow.h>
 #include <fltk3/Window.h>
 #include <fltk3/Button.h>
 #include <fltk3/Input.h>
@@ -238,6 +239,17 @@ mrb_fltk3_widget_callback(mrb_state *mrb, mrb_value self)
   return mrb_nil_value();
 }
 
+static mrb_value
+mrb_fltk3_window_show(mrb_state *mrb, mrb_value self)
+{
+  mrb_value value_context;
+  mrb_fltk3_context* context = NULL;
+  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
+  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  ((fltk3::Window*) context->w)->show(0, NULL);
+  return mrb_nil_value();
+}
+
 /*********************************************************
  * FLTK3::Group
  *********************************************************/
@@ -326,6 +338,7 @@ mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                \
   return self;                                                          \
 }
 
+DECLARE_WIDGET2(DoubleWindow)
 DECLARE_WIDGET2(Window)
 DECLARE_WIDGET1(Button)
 DECLARE_WIDGET1(Input)
@@ -374,10 +387,15 @@ extern "C"
   mrb_define_method(mrb, _class_fltk3_ ## x, "h=", mrb_fltk3_widget_h_set, ARGS_REQ(1)); \
   mrb_define_method(mrb, _class_fltk3_ ## x, "label", mrb_fltk3_widget_label_get, ARGS_NONE()); \
   mrb_define_method(mrb, _class_fltk3_ ## x, "label=", mrb_fltk3_widget_label_set, ARGS_REQ(1)); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "show", mrb_fltk3_widget_show, ARGS_NONE()); \
   mrb_define_method(mrb, _class_fltk3_ ## x, "hide", mrb_fltk3_widget_hide, ARGS_NONE()); \
   mrb_define_method(mrb, _class_fltk3_ ## x, "visible", mrb_fltk3_widget_visible, ARGS_NONE()); \
   mrb_define_method(mrb, _class_fltk3_ ## x, "callback", mrb_fltk3_widget_callback, ARGS_OPT(1));
+
+#define INHERIT_WIDGET_SHOW(x) \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "show", mrb_fltk3_widget_show, ARGS_NONE()); \
+
+#define INHERIT_WINDOW_SHOW(x) \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "show", mrb_fltk3_window_show, ARGS_OPT(1)); \
 
 #define DEFINE_WIDGET(x) \
   struct RClass* _class_fltk3_ ## x = mrb_define_class_under(mrb, _class_fltk3, # x, mrb->object_class); \
@@ -393,15 +411,23 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   mrb_define_module_function(mrb, _class_fltk3, "ask", mrb_fltk3_ask, ARGS_REQ(1));
   ARENA_RESTORE;
 
+  DEFINE_WIDGET(DoubleWindow)
+  INHERIT_WIDGET(DoubleWindow)
+  INHERIT_GROUP(DoubleWindow)
+  INHERIT_WINDOW_SHOW(DoubleWindow)
+
   DEFINE_WIDGET(Window)
   INHERIT_WIDGET(Window)
   INHERIT_GROUP(Window)
+  INHERIT_WINDOW_SHOW(Window)
 
   DEFINE_WIDGET(Button)
   INHERIT_WIDGET(Button)
+  INHERIT_WIDGET_SHOW(Button)
 
   DEFINE_WIDGET(Input)
   INHERIT_WIDGET(Input)
+  INHERIT_WIDGET_SHOW(Input)
 
   ARENA_RESTORE;
 }
