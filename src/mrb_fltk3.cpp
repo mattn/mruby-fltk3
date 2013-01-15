@@ -9,6 +9,7 @@
 #include <mruby/variable.h>
 #include <fltk3/Window.h>
 #include <fltk3/Button.h>
+#include <fltk3/Input.h>
 #include <fltk3/message.h>
 #include <fltk3/ask.h>
 #include <fltk3/run.h>
@@ -327,6 +328,7 @@ mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                \
 
 DECLARE_WIDGET2(Window)
 DECLARE_WIDGET1(Button)
+DECLARE_WIDGET1(Input)
 
 /*********************************************************
  * FLTK3::*
@@ -376,6 +378,11 @@ extern "C"
   mrb_define_method(mrb, _class_fltk3_ ## x, "hide", mrb_fltk3_widget_hide, ARGS_NONE()); \
   mrb_define_method(mrb, _class_fltk3_ ## x, "visible", mrb_fltk3_widget_visible, ARGS_NONE()); \
   mrb_define_method(mrb, _class_fltk3_ ## x, "callback", mrb_fltk3_widget_callback, ARGS_OPT(1));
+
+#define DEFINE_WIDGET(x) \
+  struct RClass* _class_fltk3_ ## x = mrb_define_class_under(mrb, _class_fltk3, # x, mrb->object_class); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "initialize", mrb_fltk3_ ## x ## _init, ARGS_ANY());
+
 void
 mrb_mruby_fltk3_gem_init(mrb_state* mrb)
 {
@@ -386,14 +393,15 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   mrb_define_module_function(mrb, _class_fltk3, "ask", mrb_fltk3_ask, ARGS_REQ(1));
   ARENA_RESTORE;
 
-  struct RClass* _class_fltk3_Window = mrb_define_class_under(mrb, _class_fltk3, "Window", mrb->object_class);
-  mrb_define_method(mrb, _class_fltk3_Window, "initialize", mrb_fltk3_Window_init, ARGS_ANY());
+  DEFINE_WIDGET(Window)
   INHERIT_WIDGET(Window)
   INHERIT_GROUP(Window)
 
-  struct RClass* _class_fltk3_Button = mrb_define_class_under(mrb, _class_fltk3, "Button", mrb->object_class);
-  mrb_define_method(mrb, _class_fltk3_Button, "initialize", mrb_fltk3_Button_init, ARGS_ANY());
+  DEFINE_WIDGET(Button)
   INHERIT_WIDGET(Button)
+
+  DEFINE_WIDGET(Input)
+  INHERIT_WIDGET(Input)
 
   ARENA_RESTORE;
 }
