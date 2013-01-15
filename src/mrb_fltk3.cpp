@@ -17,6 +17,8 @@
 #include <fltk3/RadioButton.h>
 #include <fltk3/Input.h>
 #include <fltk3/ValueOutput.h>
+#include <fltk3/TextDisplay.h>
+#include <fltk3/TextEditor.h>
 #include <fltk3/message.h>
 #include <fltk3/ask.h>
 #include <fltk3/run.h>
@@ -39,21 +41,37 @@ typedef struct {
   fltk3::Widget* w;
   mrb_value instance;
   mrb_state* mrb;
-} mrb_fltk3_context;
+} mrb_fltk3_Widget_context;
+
+typedef struct {
+  fltk3::TextBuffer* tb;
+  mrb_value instance;
+  mrb_state* mrb;
+} mrb_fltk3_TextBuffer_context;
 
 static void
-fltk3_context_free(mrb_state *mrb, void *p) {
+fltk3_Widget_free(mrb_state *mrb, void *p) {
   free(p);
 }
 
-static const struct mrb_data_type fltk3_context_type = {
-  "fltk3_context", fltk3_context_free,
+static void
+fltk3_TextBuffer_free(mrb_state *mrb, void *p) {
+  free(p);
+}
+
+static const struct mrb_data_type fltk3_Widget_type = {
+  "fltk3_widget", fltk3_Widget_free,
+};
+
+static const struct mrb_data_type fltk3_TextBuffer_type = {
+  "fltk3_textbuffer", fltk3_TextBuffer_free,
 };
 
 static bool
 arg_check(const char* t, int argc, mrb_value* argv)
 {
   int n, l = strlen(t);
+  if (l != argc) return false;
   for (n = 0; n < l; n++) {
     if (n >= argc) return false;
     if (t[n] == 'i' && mrb_type(argv[n]) != MRB_TT_FIXNUM) return false;
@@ -64,38 +82,38 @@ arg_check(const char* t, int argc, mrb_value* argv)
   return true;
 }
 
+#define CONTEXT_SETUP(t) \
+    mrb_value value_context; \
+    mrb_fltk3_ ## t ## _context* context = NULL; \
+    value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context")); \
+    Data_Get_Struct(mrb, value_context, &fltk3_ ## t ## _type, context);
+
 /*********************************************************
  * FLTK3::Widget
  *********************************************************/
 static mrb_value
 mrb_fltk3_widget_box_get(mrb_state *mrb, mrb_value self)
 {
-  mrb_value value_context;
-  mrb_fltk3_context* context = NULL;
-  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
-  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  CONTEXT_SETUP(Widget);
   struct RClass* _class_fltk3 = mrb_class_get(mrb, "FLTK3");
   struct RClass* _class_fltk3_Box = mrb_class_ptr(mrb_const_get(mrb, mrb_obj_value(_class_fltk3), mrb_intern(mrb, "Box")));
   mrb_value args[1];
   args[0] = mrb_obj_value(
     Data_Wrap_Struct(mrb, mrb->object_class,
-    &fltk3_context_type, (void*) context->w->box()));
+    &fltk3_Widget_type, (void*) context->w->box()));
   return mrb_class_new_instance(mrb, 1, args, _class_fltk3_Box);
 }
 
 static mrb_value
 mrb_fltk3_widget_box_set(mrb_state *mrb, mrb_value self)
 {
-  mrb_value value_context;
-  mrb_fltk3_context* context = NULL;
-  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
-  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  CONTEXT_SETUP(Widget);
   mrb_value box;
   mrb_get_args(mrb, "o", &box);
   mrb_value box_value_context;
-  mrb_fltk3_context* box_context = NULL;
+  mrb_fltk3_Widget_context* box_context = NULL;
   box_value_context = mrb_iv_get(mrb, box, mrb_intern(mrb, "context"));
-  Data_Get_Struct(mrb, box_value_context, &fltk3_context_type, box_context);
+  Data_Get_Struct(mrb, box_value_context, &fltk3_Widget_type, box_context);
   context->w->box((fltk3::Box*) box_context->w);
   return mrb_nil_value();
 }
@@ -103,10 +121,7 @@ mrb_fltk3_widget_box_set(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_fltk3_widget_show(mrb_state *mrb, mrb_value self)
 {
-  mrb_value value_context;
-  mrb_fltk3_context* context = NULL;
-  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
-  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  CONTEXT_SETUP(Widget);
   context->w->show();
   return mrb_nil_value();
 }
@@ -114,10 +129,7 @@ mrb_fltk3_widget_show(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_fltk3_widget_hide(mrb_state *mrb, mrb_value self)
 {
-  mrb_value value_context;
-  mrb_fltk3_context* context = NULL;
-  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
-  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  CONTEXT_SETUP(Widget);
   context->w->hide();
   return mrb_nil_value();
 }
@@ -125,10 +137,7 @@ mrb_fltk3_widget_hide(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_fltk3_widget_visible(mrb_state *mrb, mrb_value self)
 {
-  mrb_value value_context;
-  mrb_fltk3_context* context = NULL;
-  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
-  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  CONTEXT_SETUP(Widget);
   return context->w->visible() ? mrb_true_value() : mrb_false_value();
 }
 
@@ -136,7 +145,7 @@ static void
 _mrb_fltk3_widget_callback(fltk3::Widget* w, void* v)
 {
   mrb_value args[2];
-  mrb_fltk3_context* context = (mrb_fltk3_context*) v;
+  mrb_fltk3_Widget_context* context = (mrb_fltk3_Widget_context*) v;
   mrb_state* mrb = context->mrb;
   mrb_value proc = mrb_iv_get(mrb, context->instance, mrb_intern(mrb, "callback"));
   mrb_value value = mrb_iv_get(mrb, context->instance, mrb_intern(mrb, "value"));
@@ -148,11 +157,8 @@ _mrb_fltk3_widget_callback(fltk3::Widget* w, void* v)
 static mrb_value
 mrb_fltk3_widget_callback(mrb_state *mrb, mrb_value self)
 {
+  CONTEXT_SETUP(Widget);
   mrb_value b = mrb_nil_value();
-  mrb_value value_context;
-  mrb_fltk3_context* context = NULL;
-  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
-  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
   mrb_value v = mrb_nil_value();
   mrb_get_args(mrb, "&|o", &b, &v);
   if (!mrb_nil_p(b)) {
@@ -166,10 +172,7 @@ mrb_fltk3_widget_callback(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_fltk3_window_show(mrb_state *mrb, mrb_value self)
 {
-  mrb_value value_context;
-  mrb_fltk3_context* context = NULL;
-  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
-  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  CONTEXT_SETUP(Widget);
   ((fltk3::Window*) context->w)->show(0, NULL);
   return mrb_nil_value();
 }
@@ -180,20 +183,14 @@ mrb_fltk3_window_show(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_fltk3_input_value_get(mrb_state *mrb, mrb_value self)
 {
-  mrb_value value_context;
-  mrb_fltk3_context* context = NULL;
-  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
-  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  CONTEXT_SETUP(Widget);
   return mrb_str_new_cstr(mrb, ((fltk3::Input*) context->w)->value());
 }
 
 static mrb_value
 mrb_fltk3_input_value_set(mrb_state *mrb, mrb_value self)
 {
-  mrb_value value_context;
-  mrb_fltk3_context* context = NULL;
-  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
-  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  CONTEXT_SETUP(Widget);
   mrb_value text;
   mrb_get_args(mrb, "S", &text);
   ((fltk3::Input*) context->w)->value(RSTRING_PTR(text));
@@ -206,22 +203,52 @@ mrb_fltk3_input_value_set(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_fltk3_group_begin(mrb_state *mrb, mrb_value self)
 {
-  mrb_value value_context;
-  mrb_fltk3_context* context = NULL;
-  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
-  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
-  ((fltk3::Group*)context->w)->begin();
+  CONTEXT_SETUP(Widget);
+  mrb_value b = mrb_nil_value();
+  mrb_get_args(mrb, "&", &b);
+  if (!mrb_nil_p(b)) {
+    mrb_value args[1];
+    args[0] = self;
+    ((fltk3::Group*)context->w)->begin();
+    mrb_yield_argv(mrb, b, 1, args);
+    ((fltk3::Group*)context->w)->end();
+  } else
+    ((fltk3::Group*)context->w)->begin();
   return mrb_nil_value();
 }
 
 static mrb_value
 mrb_fltk3_group_end(mrb_state *mrb, mrb_value self)
 {
-  mrb_value value_context;
-  mrb_fltk3_context* context = NULL;
-  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
-  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  CONTEXT_SETUP(Widget);
   ((fltk3::Group*)context->w)->end();
+  return mrb_nil_value();
+}
+
+static mrb_value
+mrb_fltk3_group_resizable_get(mrb_state *mrb, mrb_value self)
+{
+  CONTEXT_SETUP(Widget);
+  struct RClass* _class_fltk3 = mrb_class_get(mrb, "FLTK3");
+  struct RClass* _class_fltk3_Widget = mrb_class_ptr(mrb_const_get(mrb, mrb_obj_value(_class_fltk3), mrb_intern(mrb, "Widget")));
+  mrb_value args[1];
+  args[0] = mrb_obj_value(
+    Data_Wrap_Struct(mrb, mrb->object_class,
+    &fltk3_Widget_type, (void*) ((fltk3::Group*) context->w)->resizable()));
+  return mrb_class_new_instance(mrb, 1, args, _class_fltk3_Widget);
+}
+
+static mrb_value
+mrb_fltk3_group_resizable_set(mrb_state *mrb, mrb_value self)
+{
+  CONTEXT_SETUP(Widget);
+  mrb_value arg;
+  mrb_get_args(mrb, "o", &arg);
+  mrb_value arg_value_context;
+  mrb_fltk3_Widget_context* arg_context = NULL;
+  arg_value_context = mrb_iv_get(mrb, arg, mrb_intern(mrb, "context"));
+  Data_Get_Struct(mrb, arg_value_context, &fltk3_Widget_type, arg_context);
+  ((fltk3::Group*) context->w)->resizable(arg_context->w);
   return mrb_nil_value();
 }
 
@@ -269,100 +296,112 @@ mrb_fltk3_font_name(mrb_state *mrb, mrb_value self)
   return name ? mrb_str_new_cstr(mrb, name) : mrb_nil_value();
 }
 
-#define DECLARE_WIDGET(x)                                               \
-static mrb_value                                                        \
-mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                \
-{                                                                       \
-  mrb_value *argv;                                                      \
-  int argc;                                                             \
-  mrb_get_args(mrb, "*", &argv, &argc);                                 \
-  mrb_fltk3_context* context =                                          \
-    (mrb_fltk3_context*) malloc(sizeof(mrb_fltk3_context));             \
-  if (!context) mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc memory");  \
-  memset(context, 0, sizeof(mrb_fltk3_context));                        \
-  context->instance = self;                                             \
-  context->mrb = mrb;                                                   \
-  if (arg_check("iiiis", argc, argv)) {                                 \
-    context->w = (fltk3::Widget*) new fltk3::x (                        \
-      (int) mrb_fixnum(argv[0]),                                        \
-      (int) mrb_fixnum(argv[1]),                                        \
-      (int) mrb_fixnum(argv[2]),                                        \
-      (int) mrb_fixnum(argv[3]),                                        \
-      RSTRING_PTR(argv[4]));                                            \
-  } else {                                                              \
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid argument");               \
-  }                                                                     \
-  mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), mrb_obj_value(      \
-    Data_Wrap_Struct(mrb, mrb->object_class,                            \
-    &fltk3_context_type, (void*) context)));                            \
-  return self;                                                          \
+#define DECLARE_WIDGET(x)                                                 \
+static mrb_value                                                          \
+mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                  \
+{                                                                         \
+  mrb_value *argv;                                                        \
+  int argc;                                                               \
+  mrb_get_args(mrb, "*", &argv, &argc);                                   \
+  mrb_fltk3_Widget_context* context =                                     \
+    (mrb_fltk3_Widget_context*) malloc(sizeof(mrb_fltk3_Widget_context)); \
+  if (!context) mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc memory");    \
+  memset(context, 0, sizeof(mrb_fltk3_Widget_context));                   \
+  context->instance = self;                                               \
+  context->mrb = mrb;                                                     \
+  if (arg_check("o", argc, argv)) {                                       \
+    if (strcmp(mrb_obj_classname(mrb, argv[0]), "fltk3_widget"))          \
+      mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid argument");               \
+    mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), argv[0]);           \
+    return self;                                                          \
+  } else if (arg_check("iiii", argc, argv)) {                             \
+    context->w = (fltk3::Widget*) new fltk3::x (                          \
+      (int) mrb_fixnum(argv[0]),                                          \
+      (int) mrb_fixnum(argv[1]),                                          \
+      (int) mrb_fixnum(argv[2]),                                          \
+      (int) mrb_fixnum(argv[3]));                                         \
+  } else if (arg_check("iiiis", argc, argv)) {                            \
+    context->w = (fltk3::Widget*) new fltk3::x (                          \
+      (int) mrb_fixnum(argv[0]),                                          \
+      (int) mrb_fixnum(argv[1]),                                          \
+      (int) mrb_fixnum(argv[2]),                                          \
+      (int) mrb_fixnum(argv[3]),                                          \
+      RSTRING_PTR(argv[4]));                                              \
+  } else {                                                                \
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid argument");                 \
+  }                                                                       \
+  mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), mrb_obj_value(        \
+    Data_Wrap_Struct(mrb, mrb->object_class,                              \
+    &fltk3_Widget_type, (void*) context)));                               \
+  return self;                                                            \
 }
 
-#define DECLARE_WINDOW(x)                                               \
-static mrb_value                                                        \
-mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                \
-{                                                                       \
-  mrb_value *argv;                                                      \
-  int argc;                                                             \
-  mrb_get_args(mrb, "*", &argv, &argc);                                 \
-  mrb_fltk3_context* context =                                          \
-    (mrb_fltk3_context*) malloc(sizeof(mrb_fltk3_context));             \
-  if (!context) mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc memory");  \
-  memset(context, 0, sizeof(mrb_fltk3_context));                        \
-  context->instance = self;                                             \
-  context->mrb = mrb;                                                   \
-  if (arg_check("iis", argc, argv)) {                                   \
-    context->w = (fltk3::Widget*) new fltk3::x (                        \
-      (int) mrb_fixnum(argv[0]),                                        \
-      (int) mrb_fixnum(argv[1]),                                        \
-      RSTRING_PTR(argv[2]));                                            \
-  } else if (arg_check("iiiis", argc, argv)) {                          \
-    context->w = (fltk3::Widget*) new fltk3::x (                        \
-      (int) mrb_fixnum(argv[0]),                                        \
-      (int) mrb_fixnum(argv[1]),                                        \
-      (int) mrb_fixnum(argv[2]),                                        \
-      (int) mrb_fixnum(argv[3]),                                        \
-      RSTRING_PTR(argv[4]));                                            \
-  } else {                                                              \
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid argument");               \
-  }                                                                     \
-  mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), mrb_obj_value(      \
-    Data_Wrap_Struct(mrb, mrb->object_class,                            \
-    &fltk3_context_type, (void*) context)));                            \
-  return self;                                                          \
+#define DECLARE_WINDOW(x)                                                 \
+static mrb_value                                                          \
+mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                  \
+{                                                                         \
+  mrb_value *argv;                                                        \
+  int argc;                                                               \
+  mrb_get_args(mrb, "*", &argv, &argc);                                   \
+  mrb_fltk3_Widget_context* context =                                     \
+    (mrb_fltk3_Widget_context*) malloc(sizeof(mrb_fltk3_Widget_context)); \
+  if (!context) mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc memory");    \
+  memset(context, 0, sizeof(mrb_fltk3_Widget_context));                   \
+  context->instance = self;                                               \
+  context->mrb = mrb;                                                     \
+  if (arg_check("iis", argc, argv)) {                                     \
+    context->w = (fltk3::Widget*) new fltk3::x (                          \
+      (int) mrb_fixnum(argv[0]),                                          \
+      (int) mrb_fixnum(argv[1]),                                          \
+      RSTRING_PTR(argv[2]));                                              \
+  } else if (arg_check("iiiis", argc, argv)) {                            \
+    context->w = (fltk3::Widget*) new fltk3::x (                          \
+      (int) mrb_fixnum(argv[0]),                                          \
+      (int) mrb_fixnum(argv[1]),                                          \
+      (int) mrb_fixnum(argv[2]),                                          \
+      (int) mrb_fixnum(argv[3]),                                          \
+      RSTRING_PTR(argv[4]));                                              \
+  } else {                                                                \
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid argument");                 \
+  }                                                                       \
+  mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), mrb_obj_value(        \
+    Data_Wrap_Struct(mrb, mrb->object_class,                              \
+    &fltk3_Widget_type, (void*) context)));                               \
+  return self;                                                            \
 }
 
-static mrb_value
-mrb_fltk3_Box_init(mrb_state *mrb, mrb_value self)
-{
-  mrb_value arg = mrb_nil_value();
-  mrb_get_args(mrb, "|o", &arg);
-  if (!mrb_nil_p(arg)) {
-    if (strcmp(mrb_obj_classname(mrb, arg), "fltk3_context"))
-      mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc fltk3::Box");
-    mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), arg);
-  }
-  return self;
+#define DECLARE_HIDDEN_WIDGET(x)                                          \
+static mrb_value                                                          \
+mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                  \
+{                                                                         \
+  mrb_value arg = mrb_nil_value();                                        \
+  mrb_get_args(mrb, "|o", &arg);                                          \
+  if (!mrb_nil_p(arg)) {                                                  \
+    if (strcmp(mrb_obj_classname(mrb, arg), "fltk3_widget"))              \
+      mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc fltk3::" # x);         \
+    mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), arg);               \
+  } else mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc fltk3::" # x);      \
+  return self;                                                            \
 }
 
-#define DECLARE_BOX(x)                                                  \
-static mrb_value                                                        \
-mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                \
-{                                                                       \
-  mrb_value arg = mrb_nil_value();                                      \
-  mrb_get_args(mrb, "|S", &arg);                                        \
-  mrb_fltk3_context* context =                                          \
-    (mrb_fltk3_context*) malloc(sizeof(mrb_fltk3_context));             \
-  if (!context) mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc memory");  \
-  memset(context, 0, sizeof(mrb_fltk3_context));                        \
-  context->instance = self;                                             \
-  context->mrb = mrb;                                                   \
-  context->w = (fltk3::Widget*) new fltk3::x (                          \
-    mrb_nil_p(arg) ? NULL : RSTRING_PTR(arg));                          \
-  mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), mrb_obj_value(      \
-    Data_Wrap_Struct(mrb, mrb->object_class,                            \
-    &fltk3_context_type, (void*) context)));                            \
-  return self;                                                          \
+#define DECLARE_BOX(x)                                                    \
+static mrb_value                                                          \
+mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                  \
+{                                                                         \
+  mrb_value arg = mrb_nil_value();                                        \
+  mrb_get_args(mrb, "|S", &arg);                                          \
+  mrb_fltk3_Widget_context* context =                                     \
+    (mrb_fltk3_Widget_context*) malloc(sizeof(mrb_fltk3_Widget_context)); \
+  if (!context) mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc memory");    \
+  memset(context, 0, sizeof(mrb_fltk3_Widget_context));                   \
+  context->instance = self;                                               \
+  context->mrb = mrb;                                                     \
+  context->w = (fltk3::Widget*) new fltk3::x (                            \
+    mrb_nil_p(arg) ? NULL : RSTRING_PTR(arg));                            \
+  mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), mrb_obj_value(        \
+    Data_Wrap_Struct(mrb, mrb->object_class,                              \
+    &fltk3_Widget_type, (void*) context)));                               \
+  return self;                                                            \
 }
 
 DECLARE_WIDGET(Widget)
@@ -376,6 +415,11 @@ DECLARE_WIDGET(Input)
 DECLARE_WIDGET(CheckButton)
 DECLARE_WIDGET(RadioButton)
 
+DECLARE_HIDDEN_WIDGET(Group)
+DECLARE_WIDGET(TextDisplay)
+DECLARE_WIDGET(TextEditor)
+
+DECLARE_HIDDEN_WIDGET(Box)
 DECLARE_BOX(NoBox)
 DECLARE_BOX(FlatBox)
 DECLARE_BOX(UpBox)
@@ -425,37 +469,22 @@ DECLARE_BOX(ClassicDownFrame)
 DECLARE_BOX(ClassicThinUpFrame)
 DECLARE_BOX(ClassicThinDownFrame)
 
-#define CONTEXT_SETUP \
-    mrb_value value_context; \
-    mrb_fltk3_context* context = NULL; \
-    value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context")); \
-    Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
-
 extern "C"
 {
 #define INHERIT_GROUP(x) \
   mrb_define_method(mrb, _class_fltk3_ ## x, "begin", mrb_fltk3_group_begin, ARGS_NONE()); \
   mrb_define_method(mrb, _class_fltk3_ ## x, "end", mrb_fltk3_group_end, ARGS_NONE()); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "resizable", [] (mrb_state* mrb, mrb_value self) -> mrb_value { \
-    CONTEXT_SETUP; \
-    return mrb_fixnum_value(((fltk3::Group*) context->w)->resizable()); \
-  }, ARGS_NONE()); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "resizable=", [] (mrb_state* mrb, mrb_value self) -> mrb_value { \
-    CONTEXT_SETUP; \
-    mrb_value resizable; \
-    mrb_get_args(mrb, "i", &resizable); \
-    ((fltk3::Group*) context->w)->resizable(mrb_fixnum(resizable)); \
-    return mrb_nil_value(); \
-  }, ARGS_NONE()); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "resizable", mrb_fltk3_group_resizable_get, ARGS_NONE()); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "resizable=", mrb_fltk3_group_resizable_set, ARGS_REQ(1)); \
   ARENA_RESTORE;
 
 #define DEFINE_FIXNUM_PROP(x, y) \
   mrb_define_method(mrb, _class_fltk3_ ## x, # y, [] (mrb_state* mrb, mrb_value self) -> mrb_value { \
-    CONTEXT_SETUP; \
+    CONTEXT_SETUP(Widget); \
     return mrb_fixnum_value(((fltk3::x*) context->w)->y()); \
   }, ARGS_NONE()); \
   mrb_define_method(mrb, _class_fltk3_ ## x, # y "=", [] (mrb_state* mrb, mrb_value self) -> mrb_value { \
-    CONTEXT_SETUP; \
+    CONTEXT_SETUP(Widget); \
     mrb_value vv; \
     mrb_get_args(mrb, "i", &vv); \
     ((fltk3::x*) context->w)->y(mrb_fixnum(vv)); \
@@ -465,12 +494,12 @@ extern "C"
 
 #define DEFINE_STR_PROP(x, y) \
   mrb_define_method(mrb, _class_fltk3_ ## x, # y, [] (mrb_state* mrb, mrb_value self) -> mrb_value { \
-    CONTEXT_SETUP; \
+    CONTEXT_SETUP(Widget); \
     const char* vv = ((fltk3::x*) context->w)->y(); \
     return vv ? mrb_str_new_cstr(mrb, vv) : mrb_nil_value(); \
   }, ARGS_NONE()); \
   mrb_define_method(mrb, _class_fltk3_ ## x, # y "=", [] (mrb_state* mrb, mrb_value self) -> mrb_value { \
-    CONTEXT_SETUP; \
+    CONTEXT_SETUP(Widget); \
     mrb_value vv; \
     mrb_get_args(mrb, "S", &vv); \
     ((fltk3::x*) context->w)->y(RSTRING_PTR(vv)); \
@@ -508,9 +537,9 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   DEFINE_FIXNUM_PROP(Widget, y);
   DEFINE_FIXNUM_PROP(Widget, w);
   DEFINE_FIXNUM_PROP(Widget, h);
-  DEFINE_STR_PROP(Widget, label);
   DEFINE_FIXNUM_PROP(Widget, labelfont);
   DEFINE_FIXNUM_PROP(Widget, labelsize);
+  DEFINE_STR_PROP(Widget, label);
   mrb_define_method(mrb, _class_fltk3_Widget, "box", mrb_fltk3_widget_box_get, ARGS_NONE());
   mrb_define_method(mrb, _class_fltk3_Widget, "box=", mrb_fltk3_widget_box_set, ARGS_REQ(1));
   mrb_define_method(mrb, _class_fltk3_Widget, "visible", mrb_fltk3_widget_visible, ARGS_NONE());
@@ -529,14 +558,14 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   INHERIT_INPUT_VALUE(Input);
 
   mrb_define_method(mrb, _class_fltk3_Browser, "load", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
-    CONTEXT_SETUP;
+    CONTEXT_SETUP(Widget);
     mrb_value filename;
     mrb_get_args(mrb, "S", &filename);
     return mrb_fixnum_value(((fltk3::Browser*) context->w)->load(RSTRING_PTR(filename)));
   }, ARGS_REQ(1));
   DEFINE_FIXNUM_PROP(Browser, value);
   mrb_define_method(mrb, _class_fltk3_Browser, "text", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
-    CONTEXT_SETUP;
+    CONTEXT_SETUP(Widget);
     mrb_value line = mrb_nil_value(), text = mrb_nil_value();
     mrb_get_args(mrb, "|i|S", &line, &text);
     if (mrb_nil_p(text)) {
@@ -551,6 +580,13 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
     return mrb_nil_value();
   }, ARGS_REQ(1) | ARGS_OPT(1));
   DEFINE_WIDGET(SelectBrowser, Browser);
+
+  struct RClass* _class_fltk3_Group = mrb_define_class_under(mrb, _class_fltk3, "Group", _class_fltk3_Widget);
+  mrb_define_method(mrb, _class_fltk3_Group, "initialize", mrb_fltk3_Group_init, ARGS_ANY());
+  INHERIT_GROUP(Group);
+
+  DEFINE_WIDGET(TextDisplay, Group);
+  DEFINE_WIDGET(TextEditor, TextDisplay);
 
   struct RClass* _class_fltk3_Window = mrb_define_class_under(mrb, _class_fltk3, "Window", _class_fltk3_Widget);
   mrb_define_method(mrb, _class_fltk3_Window, "initialize", mrb_fltk3_Window_init, ARGS_ANY());
@@ -608,6 +644,44 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   DEFINE_WIDGET(ClassicDownFrame, Box);
   DEFINE_WIDGET(ClassicThinUpFrame, Box);
   DEFINE_WIDGET(ClassicThinDownFrame, Box);
+
+  struct RClass* _class_fltk3_TextBuffer = mrb_define_class_under(mrb, _class_fltk3, "TextBuffer", mrb->object_class);
+  mrb_define_method(mrb, _class_fltk3_TextBuffer, "initialize", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
+    mrb_fltk3_TextBuffer_context* context =
+      (mrb_fltk3_TextBuffer_context*) malloc(sizeof(mrb_fltk3_TextBuffer_context));
+    if (!context) mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc memory");
+    memset(context, 0, sizeof(mrb_fltk3_TextBuffer_context));
+    context->instance = self;
+    context->tb = new fltk3::TextBuffer;
+    mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), mrb_obj_value(
+      Data_Wrap_Struct(mrb, mrb->object_class,
+      &fltk3_TextBuffer_type, (void*) context)));
+  }, ARGS_ANY());
+
+  mrb_define_method(mrb, _class_fltk3_TextDisplay, "buffer", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
+    CONTEXT_SETUP(Widget);
+    struct RClass* _class_fltk3 = mrb_class_get(mrb, "FLTK3");
+    struct RClass* _class_fltk3_TextBuffer = mrb_class_ptr(mrb_const_get(mrb, mrb_obj_value(_class_fltk3), mrb_intern(mrb, "TextBuffer")));
+    mrb_value args[1];
+    args[0] = mrb_obj_value(
+      Data_Wrap_Struct(mrb, mrb->object_class,
+      &fltk3_TextBuffer_type, (void*) ((fltk3::TextDisplay*) context->w)->buffer()));
+    return mrb_class_new_instance(mrb, 1, args, _class_fltk3_TextBuffer);
+  }, ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_TextDisplay, "buffer=", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
+    CONTEXT_SETUP(Widget);
+    struct RClass* _class_fltk3 = mrb_class_get(mrb, "FLTK3");
+    struct RClass* _class_fltk3_TextBuffer = mrb_class_ptr(mrb_const_get(mrb, mrb_obj_value(_class_fltk3), mrb_intern(mrb, "TextBuffer")));
+    mrb_value textbuffer;
+    mrb_get_args(mrb, "o", &textbuffer);
+    mrb_value textbuffer_value_context;
+    mrb_fltk3_TextBuffer_context* textbuffer_context = NULL;
+    textbuffer_value_context = mrb_iv_get(mrb, textbuffer, mrb_intern(mrb, "context"));
+    Data_Get_Struct(mrb, textbuffer_value_context, &fltk3_TextBuffer_type, textbuffer_context);
+    ((fltk3::TextDisplay*) context->w)->buffer(textbuffer_context->tb);
+    return mrb_nil_value();
+  }, ARGS_REQ(1));
+  ARENA_RESTORE;
 }
 
 }
