@@ -11,6 +11,8 @@
 #include <fltk3/Window.h>
 #include <fltk3/Box.h>
 #include <fltk3/Button.h>
+#include <fltk3/CheckButton.h>
+#include <fltk3/RadioButton.h>
 #include <fltk3/Input.h>
 #include <fltk3/message.h>
 #include <fltk3/ask.h>
@@ -201,6 +203,29 @@ mrb_fltk3_widget_labelfont_set(mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
+mrb_fltk3_widget_labelsize_get(mrb_state *mrb, mrb_value self)
+{
+  mrb_value value_context;
+  mrb_fltk3_context* context = NULL;
+  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
+  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  return mrb_fixnum_value(context->w->labelsize());
+}
+
+static mrb_value
+mrb_fltk3_widget_labelsize_set(mrb_state *mrb, mrb_value self)
+{
+  mrb_value value_context;
+  mrb_fltk3_context* context = NULL;
+  value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context"));
+  Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+  mrb_value labelsize;
+  mrb_get_args(mrb, "i", &labelsize);
+  context->w->labelsize(mrb_fixnum(labelsize));
+  return mrb_nil_value();
+}
+
+static mrb_value
 mrb_fltk3_widget_box_get(mrb_state *mrb, mrb_value self)
 {
   mrb_value value_context;
@@ -384,6 +409,24 @@ mrb_fltk3_ask(mrb_state *mrb, mrb_value self)
   return fltk3::ask(RSTRING_PTR(s)) ? mrb_true_value() : mrb_false_value();
 }
 
+static mrb_value
+mrb_fltk3_set_fonts(mrb_state *mrb, mrb_value self)
+{
+  mrb_value s;
+  mrb_get_args(mrb, "S", &s);
+  return mrb_fixnum_value(fltk3::set_fonts(RSTRING_PTR(s)));
+}
+
+static mrb_value
+mrb_fltk3_font_name(mrb_state *mrb, mrb_value self)
+{
+  mrb_value i;
+  mrb_get_args(mrb, "i", &i);
+  int font_type = 0;
+  const char *name = fltk3::get_font_name((fltk3::Font) mrb_fixnum(i), &font_type);
+  return name ? mrb_str_new_cstr(mrb, name) : mrb_nil_value();
+}
+
 #define DECLARE_WIDGET(x)                                               \
 static mrb_value                                                        \
 mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                \
@@ -465,7 +508,6 @@ static mrb_value                                                        \
 mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                \
 {                                                                       \
   mrb_value arg = mrb_nil_value();                                      \
-  int argc;                                                             \
   mrb_get_args(mrb, "|S", &arg);                                        \
   mrb_fltk3_context* context =                                          \
     (mrb_fltk3_context*) malloc(sizeof(mrb_fltk3_context));             \
@@ -486,6 +528,8 @@ DECLARE_WINDOW(DoubleWindow)
 DECLARE_WINDOW(Window)
 DECLARE_WIDGET(Button)
 DECLARE_WIDGET(Input)
+DECLARE_WIDGET(CheckButton)
+DECLARE_WIDGET(RadioButton)
 
 DECLARE_BOX(NoBox)
 DECLARE_BOX(FlatBox)
@@ -572,6 +616,8 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   mrb_define_module_function(mrb, _class_fltk3, "run", mrb_fltk3_run, ARGS_NONE());
   mrb_define_module_function(mrb, _class_fltk3, "alert", mrb_fltk3_alert, ARGS_REQ(1));
   mrb_define_module_function(mrb, _class_fltk3, "ask", mrb_fltk3_ask, ARGS_REQ(1));
+  mrb_define_module_function(mrb, _class_fltk3, "set_fonts", mrb_fltk3_set_fonts, ARGS_REQ(1));
+  mrb_define_module_function(mrb, _class_fltk3, "font_name", mrb_fltk3_font_name, ARGS_REQ(1));
   ARENA_RESTORE;
 
   struct RClass* _class_fltk3_Widget = mrb_define_class_under(mrb, _class_fltk3, "Widget", mrb->object_class);
@@ -589,6 +635,8 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   mrb_define_method(mrb, _class_fltk3_Widget, "label=", mrb_fltk3_widget_label_set, ARGS_REQ(1));
   mrb_define_method(mrb, _class_fltk3_Widget, "labelfont", mrb_fltk3_widget_labelfont_get, ARGS_NONE());
   mrb_define_method(mrb, _class_fltk3_Widget, "labelfont=", mrb_fltk3_widget_labelfont_set, ARGS_REQ(1));
+  mrb_define_method(mrb, _class_fltk3_Widget, "labelsize", mrb_fltk3_widget_labelsize_get, ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Widget, "labelsize=", mrb_fltk3_widget_labelsize_set, ARGS_REQ(1));
   mrb_define_method(mrb, _class_fltk3_Widget, "box", mrb_fltk3_widget_box_get, ARGS_NONE());
   mrb_define_method(mrb, _class_fltk3_Widget, "box=", mrb_fltk3_widget_box_set, ARGS_REQ(1));
   mrb_define_method(mrb, _class_fltk3_Widget, "hide", mrb_fltk3_widget_hide, ARGS_NONE());
@@ -599,6 +647,8 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   DEFINE_WIDGET(Button);
   DEFINE_WIDGET(Input);
   INHERIT_INPUT_VALUE(Input);
+  DEFINE_WIDGET(CheckButton);
+  DEFINE_WIDGET(RadioButton);
 
   struct RClass* _class_fltk3_Window = mrb_define_class_under(mrb, _class_fltk3, "Window", _class_fltk3_Widget);
   mrb_define_method(mrb, _class_fltk3_Window, "initialize", mrb_fltk3_Window_init, ARGS_ANY());
