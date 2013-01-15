@@ -10,10 +10,13 @@
 #include <fltk3/DoubleWindow.h>
 #include <fltk3/Window.h>
 #include <fltk3/Box.h>
+#include <fltk3/Browser.h>
+#include <fltk3/SelectBrowser.h>
 #include <fltk3/Button.h>
 #include <fltk3/CheckButton.h>
 #include <fltk3/RadioButton.h>
 #include <fltk3/Input.h>
+#include <fltk3/ValueOutput.h>
 #include <fltk3/message.h>
 #include <fltk3/ask.h>
 #include <fltk3/run.h>
@@ -526,7 +529,10 @@ mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                \
 DECLARE_WIDGET(Widget)
 DECLARE_WINDOW(DoubleWindow)
 DECLARE_WINDOW(Window)
+DECLARE_WIDGET(Browser)
+DECLARE_WIDGET(SelectBrowser)
 DECLARE_WIDGET(Button)
+DECLARE_WIDGET(ValueOutput)
 DECLARE_WIDGET(Input)
 DECLARE_WIDGET(CheckButton)
 DECLARE_WIDGET(RadioButton)
@@ -580,12 +586,57 @@ DECLARE_BOX(ClassicDownFrame)
 DECLARE_BOX(ClassicThinUpFrame)
 DECLARE_BOX(ClassicThinDownFrame)
 
+#define CONTEXT_SETUP \
+    mrb_value value_context; \
+    mrb_fltk3_context* context = NULL; \
+    value_context = mrb_iv_get(mrb, self, mrb_intern(mrb, "context")); \
+    Data_Get_Struct(mrb, value_context, &fltk3_context_type, context);
+
 extern "C"
 {
-
 #define INHERIT_GROUP(x) \
   mrb_define_method(mrb, _class_fltk3_ ## x, "begin", mrb_fltk3_group_begin, ARGS_NONE()); \
   mrb_define_method(mrb, _class_fltk3_ ## x, "end", mrb_fltk3_group_end, ARGS_NONE()); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "resizable", [] (mrb_state* mrb, mrb_value self) -> mrb_value { \
+    CONTEXT_SETUP; \
+    return mrb_fixnum_value(((fltk3::Group*) context->w)->resizable()); \
+  }, ARGS_NONE()); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "resizable=", [] (mrb_state* mrb, mrb_value self) -> mrb_value { \
+    CONTEXT_SETUP; \
+    mrb_value resizable; \
+    mrb_get_args(mrb, "i", &resizable); \
+    ((fltk3::Group*) context->w)->resizable(mrb_fixnum(resizable)); \
+    return mrb_nil_value(); \
+  }, ARGS_NONE()); \
+  ARENA_RESTORE;
+
+#define DEFINE_FIXNUM_PROP(x, y) \
+  mrb_define_method(mrb, _class_fltk3_ ## x, # y, [] (mrb_state* mrb, mrb_value self) -> mrb_value { \
+    CONTEXT_SETUP; \
+    return mrb_fixnum_value(((fltk3::x*) context->w)->y()); \
+  }, ARGS_NONE()); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, # y "=", [] (mrb_state* mrb, mrb_value self) -> mrb_value { \
+    CONTEXT_SETUP; \
+    mrb_value vv; \
+    mrb_get_args(mrb, "i", &vv); \
+    ((fltk3::x*) context->w)->y(mrb_fixnum(vv)); \
+    return mrb_nil_value(); \
+  }, ARGS_NONE()); \
+  ARENA_RESTORE;
+
+#define DEFINE_STR_PROP(x, y) \
+  mrb_define_method(mrb, _class_fltk3_ ## x, # y, [] (mrb_state* mrb, mrb_value self) -> mrb_value { \
+    CONTEXT_SETUP; \
+    const char* vv = ((fltk3::x*) context->w)->y(); \
+    return vv ? mrb_str_new_cstr(mrb, vv) : mrb_nil_value(); \
+  }, ARGS_NONE()); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, # y "=", [] (mrb_state* mrb, mrb_value self) -> mrb_value { \
+    CONTEXT_SETUP; \
+    mrb_value vv; \
+    mrb_get_args(mrb, "S", &vv); \
+    ((fltk3::x*) context->w)->y(RSTRING_PTR(vv)); \
+    return mrb_nil_value(); \
+  }, ARGS_NONE()); \
   ARENA_RESTORE;
 
 #define INHERIT_INPUT_VALUE(x) \
@@ -593,18 +644,8 @@ extern "C"
   mrb_define_method(mrb, _class_fltk3_ ## x, "value=", mrb_fltk3_input_value_set, ARGS_NONE()); \
   ARENA_RESTORE;
 
-#define DEFINE_WIDGET(x) \
-  struct RClass* _class_fltk3_ ## x = mrb_define_class_under(mrb, _class_fltk3, # x, _class_fltk3_Widget); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "initialize", mrb_fltk3_ ## x ## _init, ARGS_ANY()); \
-  ARENA_RESTORE;
-
-#define DEFINE_WINDOW(x) \
-  struct RClass* _class_fltk3_ ## x = mrb_define_class_under(mrb, _class_fltk3, # x, _class_fltk3_Window); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "initialize", mrb_fltk3_ ## x ## _init, ARGS_ANY()); \
-  ARENA_RESTORE;
-
-#define DEFINE_BOX(x) \
-  struct RClass* _class_fltk3_ ## x = mrb_define_class_under(mrb, _class_fltk3, # x, _class_fltk3_Box); \
+#define DEFINE_WIDGET(x, y) \
+  struct RClass* _class_fltk3_ ## x = mrb_define_class_under(mrb, _class_fltk3, # x, _class_fltk3_ ## y); \
   mrb_define_method(mrb, _class_fltk3_ ## x, "initialize", mrb_fltk3_ ## x ## _init, ARGS_ANY()); \
   ARENA_RESTORE;
 
@@ -623,92 +664,111 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   struct RClass* _class_fltk3_Widget = mrb_define_class_under(mrb, _class_fltk3, "Widget", mrb->object_class);
   mrb_define_method(mrb, _class_fltk3_Widget, "initialize", mrb_fltk3_Widget_init, ARGS_ANY());
   mrb_define_method(mrb, _class_fltk3_Widget, "show", mrb_fltk3_widget_show, ARGS_NONE());
-  mrb_define_method(mrb, _class_fltk3_Widget, "x", mrb_fltk3_widget_x_get, ARGS_NONE());
-  mrb_define_method(mrb, _class_fltk3_Widget, "x=", mrb_fltk3_widget_x_set, ARGS_REQ(1));
-  mrb_define_method(mrb, _class_fltk3_Widget, "y", mrb_fltk3_widget_y_get, ARGS_NONE());
-  mrb_define_method(mrb, _class_fltk3_Widget, "y=", mrb_fltk3_widget_y_set, ARGS_REQ(1));
-  mrb_define_method(mrb, _class_fltk3_Widget, "w", mrb_fltk3_widget_w_get, ARGS_NONE());
-  mrb_define_method(mrb, _class_fltk3_Widget, "w=", mrb_fltk3_widget_w_set, ARGS_REQ(1));
-  mrb_define_method(mrb, _class_fltk3_Widget, "h", mrb_fltk3_widget_h_get, ARGS_NONE());
-  mrb_define_method(mrb, _class_fltk3_Widget, "h=", mrb_fltk3_widget_h_set, ARGS_REQ(1));
-  mrb_define_method(mrb, _class_fltk3_Widget, "label", mrb_fltk3_widget_label_get, ARGS_NONE());
-  mrb_define_method(mrb, _class_fltk3_Widget, "label=", mrb_fltk3_widget_label_set, ARGS_REQ(1));
-  mrb_define_method(mrb, _class_fltk3_Widget, "labelfont", mrb_fltk3_widget_labelfont_get, ARGS_NONE());
-  mrb_define_method(mrb, _class_fltk3_Widget, "labelfont=", mrb_fltk3_widget_labelfont_set, ARGS_REQ(1));
-  mrb_define_method(mrb, _class_fltk3_Widget, "labelsize", mrb_fltk3_widget_labelsize_get, ARGS_NONE());
-  mrb_define_method(mrb, _class_fltk3_Widget, "labelsize=", mrb_fltk3_widget_labelsize_set, ARGS_REQ(1));
+  mrb_define_method(mrb, _class_fltk3_Widget, "hide", mrb_fltk3_widget_hide, ARGS_NONE());
+  DEFINE_FIXNUM_PROP(Widget, x);
+  DEFINE_FIXNUM_PROP(Widget, y);
+  DEFINE_FIXNUM_PROP(Widget, w);
+  DEFINE_FIXNUM_PROP(Widget, h);
+  DEFINE_STR_PROP(Widget, label);
+  DEFINE_FIXNUM_PROP(Widget, labelfont);
+  DEFINE_FIXNUM_PROP(Widget, labelsize);
   mrb_define_method(mrb, _class_fltk3_Widget, "box", mrb_fltk3_widget_box_get, ARGS_NONE());
   mrb_define_method(mrb, _class_fltk3_Widget, "box=", mrb_fltk3_widget_box_set, ARGS_REQ(1));
-  mrb_define_method(mrb, _class_fltk3_Widget, "hide", mrb_fltk3_widget_hide, ARGS_NONE());
   mrb_define_method(mrb, _class_fltk3_Widget, "visible", mrb_fltk3_widget_visible, ARGS_NONE());
   mrb_define_method(mrb, _class_fltk3_Widget, "callback", mrb_fltk3_widget_callback, ARGS_OPT(1));
   ARENA_RESTORE;
 
-  DEFINE_WIDGET(Button);
-  DEFINE_WIDGET(Input);
+  DEFINE_WIDGET(Button, Widget);
+  DEFINE_WIDGET(ValueOutput, Widget);
+  DEFINE_WIDGET(CheckButton, Widget);
+  DEFINE_WIDGET(RadioButton, Widget);
+
+  DEFINE_WIDGET(Input, Widget);
   INHERIT_INPUT_VALUE(Input);
-  DEFINE_WIDGET(CheckButton);
-  DEFINE_WIDGET(RadioButton);
+
+  DEFINE_WIDGET(Browser, Widget);
+  INHERIT_INPUT_VALUE(Input);
+
+  mrb_define_method(mrb, _class_fltk3_Browser, "load", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
+    CONTEXT_SETUP;
+    mrb_value filename;
+    mrb_get_args(mrb, "S", &filename);
+    return mrb_fixnum_value(((fltk3::Browser*) context->w)->load(RSTRING_PTR(filename)));
+  }, ARGS_REQ(1));
+  DEFINE_FIXNUM_PROP(Browser, value);
+  mrb_define_method(mrb, _class_fltk3_Browser, "text", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
+    CONTEXT_SETUP;
+    mrb_value line = mrb_nil_value(), text = mrb_nil_value();
+    mrb_get_args(mrb, "|i|S", &line, &text);
+    if (mrb_nil_p(text)) {
+      int value = ((fltk3::Browser*) context->w)->value();
+      const char* text = ((fltk3::Browser*) context->w)->text(value);
+      return text ? mrb_str_new_cstr(mrb, text) : mrb_nil_value();
+    } else if (mrb_nil_p(text)) {
+      const char* text = ((fltk3::Browser*) context->w)->text(mrb_fixnum(line));
+      return text ? mrb_str_new_cstr(mrb, text) : mrb_nil_value();
+    }
+    ((fltk3::Browser*) context->w)->text(mrb_fixnum(line), RSTRING_PTR(text));
+    return mrb_nil_value();
+  }, ARGS_REQ(1) | ARGS_OPT(1));
+  DEFINE_WIDGET(SelectBrowser, Browser);
 
   struct RClass* _class_fltk3_Window = mrb_define_class_under(mrb, _class_fltk3, "Window", _class_fltk3_Widget);
   mrb_define_method(mrb, _class_fltk3_Window, "initialize", mrb_fltk3_Window_init, ARGS_ANY());
   mrb_define_method(mrb, _class_fltk3_Window, "show", mrb_fltk3_window_show, ARGS_OPT(1));
   INHERIT_GROUP(Window);
 
-  DEFINE_WINDOW(DoubleWindow);
+  DEFINE_WIDGET(DoubleWindow, Window);
 
-  struct RClass* _class_fltk3_Box = mrb_define_class_under(mrb, _class_fltk3, "Box", _class_fltk3_Widget);
-  mrb_define_method(mrb, _class_fltk3_Box, "initialize", mrb_fltk3_Box_init, ARGS_ANY());
-  ARENA_RESTORE;
-
-  DEFINE_BOX(NoBox);
-  DEFINE_BOX(FlatBox);
-  DEFINE_BOX(UpBox);
-  DEFINE_BOX(DownBox);
-  DEFINE_BOX(ThinUpBox);
-  DEFINE_BOX(ThinDownBox);
-  DEFINE_BOX(EngravedBox);
-  DEFINE_BOX(EmbossedBox);
-  DEFINE_BOX(BorderBox);
-  DEFINE_BOX(ShadowBox);
-  DEFINE_BOX(RoundedBox);
-  DEFINE_BOX(RShadowBox);
-  DEFINE_BOX(RFlatBox);
-  DEFINE_BOX(RoundUpBox);
-  DEFINE_BOX(RoundDownBox);
-  DEFINE_BOX(DiamondUpBox);
-  DEFINE_BOX(DiamondDownBox);
-  DEFINE_BOX(OvalBox);
-  DEFINE_BOX(OShadowBox);
-  DEFINE_BOX(OFlatBox);
-  DEFINE_BOX(PlasticUpBox);
-  DEFINE_BOX(PlasticDownBox);
-  DEFINE_BOX(PlasticThinUpBox);
-  DEFINE_BOX(PlasticThinDownBox);
-  DEFINE_BOX(PlasticRoundUpBox);
-  DEFINE_BOX(PlasticRoundDownBox);
-  DEFINE_BOX(ClassicUpBox);
-  DEFINE_BOX(ClassicDownBox);
-  DEFINE_BOX(ClassicThinUpBox);
-  DEFINE_BOX(ClassicThinDownBox);
-  DEFINE_BOX(ClassicRoundUpBox);
-  DEFINE_BOX(ClassicRoundDownBox);
-  DEFINE_BOX(BorderFrame);
-  DEFINE_BOX(UpFrame);
-  DEFINE_BOX(DownFrame);
-  DEFINE_BOX(ThinUpFrame);
-  DEFINE_BOX(ThinDownFrame);
-  DEFINE_BOX(EngravedFrame);
-  DEFINE_BOX(EmbossedFrame);
-  DEFINE_BOX(ShadowFrame);
-  DEFINE_BOX(RoundedFrame);
-  DEFINE_BOX(OvalFrame);
-  DEFINE_BOX(PlasticUpFrame);
-  DEFINE_BOX(PlasticDownFrame);
-  DEFINE_BOX(ClassicUpFrame);
-  DEFINE_BOX(ClassicDownFrame);
-  DEFINE_BOX(ClassicThinUpFrame);
-  DEFINE_BOX(ClassicThinDownFrame);
+  DEFINE_WIDGET(Box, Widget);
+  DEFINE_WIDGET(NoBox, Box);
+  DEFINE_WIDGET(FlatBox, Box);
+  DEFINE_WIDGET(UpBox, Box);
+  DEFINE_WIDGET(DownBox, Box);
+  DEFINE_WIDGET(ThinUpBox, Box);
+  DEFINE_WIDGET(ThinDownBox, Box);
+  DEFINE_WIDGET(EngravedBox, Box);
+  DEFINE_WIDGET(EmbossedBox, Box);
+  DEFINE_WIDGET(BorderBox, Box);
+  DEFINE_WIDGET(ShadowBox, Box);
+  DEFINE_WIDGET(RoundedBox, Box);
+  DEFINE_WIDGET(RShadowBox, Box);
+  DEFINE_WIDGET(RFlatBox, Box);
+  DEFINE_WIDGET(RoundUpBox, Box);
+  DEFINE_WIDGET(RoundDownBox, Box);
+  DEFINE_WIDGET(DiamondUpBox, Box);
+  DEFINE_WIDGET(DiamondDownBox, Box);
+  DEFINE_WIDGET(OvalBox, Box);
+  DEFINE_WIDGET(OShadowBox, Box);
+  DEFINE_WIDGET(OFlatBox, Box);
+  DEFINE_WIDGET(PlasticUpBox, Box);
+  DEFINE_WIDGET(PlasticDownBox, Box);
+  DEFINE_WIDGET(PlasticThinUpBox, Box);
+  DEFINE_WIDGET(PlasticThinDownBox, Box);
+  DEFINE_WIDGET(PlasticRoundUpBox, Box);
+  DEFINE_WIDGET(PlasticRoundDownBox, Box);
+  DEFINE_WIDGET(ClassicUpBox, Box);
+  DEFINE_WIDGET(ClassicDownBox, Box);
+  DEFINE_WIDGET(ClassicThinUpBox, Box);
+  DEFINE_WIDGET(ClassicThinDownBox, Box);
+  DEFINE_WIDGET(ClassicRoundUpBox, Box);
+  DEFINE_WIDGET(ClassicRoundDownBox, Box);
+  DEFINE_WIDGET(BorderFrame, Box);
+  DEFINE_WIDGET(UpFrame, Box);
+  DEFINE_WIDGET(DownFrame, Box);
+  DEFINE_WIDGET(ThinUpFrame, Box);
+  DEFINE_WIDGET(ThinDownFrame, Box);
+  DEFINE_WIDGET(EngravedFrame, Box);
+  DEFINE_WIDGET(EmbossedFrame, Box);
+  DEFINE_WIDGET(ShadowFrame, Box);
+  DEFINE_WIDGET(RoundedFrame, Box);
+  DEFINE_WIDGET(OvalFrame, Box);
+  DEFINE_WIDGET(PlasticUpFrame, Box);
+  DEFINE_WIDGET(PlasticDownFrame, Box);
+  DEFINE_WIDGET(ClassicUpFrame, Box);
+  DEFINE_WIDGET(ClassicDownFrame, Box);
+  DEFINE_WIDGET(ClassicThinUpFrame, Box);
+  DEFINE_WIDGET(ClassicThinDownFrame, Box);
 }
 
 }
