@@ -4,8 +4,8 @@ MRuby::Gem::Specification.new('mruby-fltk3') do |spec|
 
   spec.cxxflags = "-std=gnu++11 -fpermissive #{`fltk3-config --cflags`.delete("\n\r")}"
   if ENV['OS'] == 'Windows_NT'
-    spec.mruby_libs = "#{`fltk3-config --ldflags`.delete("\n\r")} -mconsole -lstdc++"
+    spec.mruby_libs = "#{`fltk3-config --use-images --ldflags`.delete("\n\r")} -mconsole -lstdc++"
   else
-    spec.mruby_libs = `fltk3-config --ldflags`.delete("\n\r")
+    spec.mruby_libs = `fltk3-config --use-images --ldflags`.delete("\n\r")
   end
 end

@@ -7,20 +7,33 @@
 #include <mruby/hash.h>
 #include <mruby/class.h>
 #include <mruby/variable.h>
-#include <fltk3/DoubleWindow.h>
-#include <fltk3/Window.h>
 #include <fltk3/Box.h>
 #include <fltk3/Browser.h>
-#include <fltk3/SelectBrowser.h>
 #include <fltk3/Button.h>
 #include <fltk3/CheckButton.h>
-#include <fltk3/RadioButton.h>
+#include <fltk3/DoubleWindow.h>
+#include <fltk3/FileChooser.h>
+#include <fltk3/Image.h>
+#include <fltk3/SharedImage.h>
 #include <fltk3/Input.h>
-#include <fltk3/ValueOutput.h>
-#include <fltk3/TextDisplay.h>
-#include <fltk3/TextEditor.h>
+#include <fltk3/LightButton.h>
 #include <fltk3/Menu.h>
 #include <fltk3/MenuBar.h>
+#include <fltk3/MenuButton.h>
+#include <fltk3/RadioButton.h>
+#include <fltk3/RadioLightButton.h>
+#include <fltk3/RadioRoundButton.h>
+#include <fltk3/RepeatButton.h>
+#include <fltk3/ReturnButton.h>
+#include <fltk3/RoundButton.h>
+#include <fltk3/SelectBrowser.h>
+#include <fltk3/TextDisplay.h>
+#include <fltk3/TextEditor.h>
+#include <fltk3/ToggleButton.h>
+#include <fltk3/ToggleLightButton.h>
+#include <fltk3/ToggleRoundButton.h>
+#include <fltk3/ValueOutput.h>
+#include <fltk3/Window.h>
 #include <fltk3/message.h>
 #include <fltk3/ask.h>
 #include <fltk3/run.h>
@@ -57,6 +70,7 @@ fltk3_ ## x ## _type = { \
 
 DECLARE_TYPE(Widget);
 DECLARE_TYPE(TextBuffer);
+DECLARE_TYPE(Image);
 DECLARE_TYPE(MenuItem);
 
 static bool
@@ -102,11 +116,44 @@ mrb_fltk3_widget_box_set(mrb_state *mrb, mrb_value self)
   CONTEXT_SETUP(Widget);
   mrb_value box;
   mrb_get_args(mrb, "o", &box);
-  mrb_value box_value_context;
-  mrb_fltk3_Widget_context* box_context = NULL;
-  box_value_context = mrb_iv_get(mrb, box, mrb_intern(mrb, "context"));
-  Data_Get_Struct(mrb, box_value_context, &fltk3_Widget_type, box_context);
-  context->v->box((fltk3::Box*) box_context->v);
+  if (!mrb_nil_p(box)) {
+    mrb_value box_value_context;
+    mrb_fltk3_Widget_context* box_context = NULL;
+    box_value_context = mrb_iv_get(mrb, box, mrb_intern(mrb, "context"));
+    Data_Get_Struct(mrb, box_value_context, &fltk3_Widget_type, box_context);
+    context->v->box((fltk3::Box*) box_context->v);
+  } else
+    context->v->box(NULL);
+  return mrb_nil_value();
+}
+
+static mrb_value
+mrb_fltk3_widget_image_get(mrb_state *mrb, mrb_value self)
+{
+  CONTEXT_SETUP(Widget);
+  struct RClass* _class_fltk3 = mrb_class_get(mrb, "FLTK3");
+  struct RClass* _class_fltk3_Image = mrb_class_ptr(mrb_const_get(mrb, mrb_obj_value(_class_fltk3), mrb_intern(mrb, "Image")));
+  mrb_value args[1];
+  args[0] = mrb_obj_value(
+    Data_Wrap_Struct(mrb, mrb->object_class,
+    &fltk3_Image_type, (void*) context->v->image()));
+  return mrb_class_new_instance(mrb, 1, args, _class_fltk3_Image);
+}
+
+static mrb_value
+mrb_fltk3_widget_image_set(mrb_state *mrb, mrb_value self)
+{
+  CONTEXT_SETUP(Widget);
+  mrb_value image;
+  mrb_get_args(mrb, "o", &image);
+  mrb_fltk3_Image_context* image_context = NULL;
+  if (!mrb_nil_p(image)) {
+    mrb_value image_value_context;
+    image_value_context = mrb_iv_get(mrb, image, mrb_intern(mrb, "context"));
+    Data_Get_Struct(mrb, image_value_context, &fltk3_Image_type, image_context);
+    context->v->image((fltk3::Image*) image_context->v);
+  } else
+    context->v->image(NULL);
   return mrb_nil_value();
 }
 
@@ -166,26 +213,6 @@ mrb_fltk3_window_show(mrb_state *mrb, mrb_value self)
 {
   CONTEXT_SETUP(Widget);
   ((fltk3::Window*) context->v)->show(0, NULL);
-  return mrb_nil_value();
-}
-
-/*********************************************************
- * FLTK3::Input
- *********************************************************/
-static mrb_value
-mrb_fltk3_input_value_get(mrb_state *mrb, mrb_value self)
-{
-  CONTEXT_SETUP(Widget);
-  return mrb_str_new_cstr(mrb, ((fltk3::Input*) context->v)->value());
-}
-
-static mrb_value
-mrb_fltk3_input_value_set(mrb_state *mrb, mrb_value self)
-{
-  CONTEXT_SETUP(Widget);
-  mrb_value text;
-  mrb_get_args(mrb, "S", &text);
-  ((fltk3::Input*) context->v)->value(RSTRING_PTR(text));
   return mrb_nil_value();
 }
 
@@ -374,14 +401,14 @@ mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                  \
   return self;                                                            \
 }
 
-#define DECLARE_HIDDEN_WIDGET(x)                                          \
+#define DECLARE_HIDDEN_OBJECT(x, y)                                       \
 static mrb_value                                                          \
 mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                  \
 {                                                                         \
   mrb_value arg = mrb_nil_value();                                        \
   mrb_get_args(mrb, "|o", &arg);                                          \
   if (!mrb_nil_p(arg)) {                                                  \
-    if (strcmp(mrb_obj_classname(mrb, arg), "fltk3_Widget"))              \
+    if (strcmp(mrb_obj_classname(mrb, arg), "fltk3_" # y))                \
       mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc fltk3::" # x);         \
     mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), arg);               \
   } else mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc fltk3::" # x);      \
@@ -408,23 +435,37 @@ mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                  \
   return self;                                                            \
 }
 
+DECLARE_HIDDEN_OBJECT(SharedImage, Image)
+
 DECLARE_WIDGET(Widget)
-DECLARE_WINDOW(DoubleWindow)
-DECLARE_WINDOW(Window)
 DECLARE_WIDGET(Browser)
 DECLARE_WIDGET(SelectBrowser)
-DECLARE_WIDGET(Button)
 DECLARE_WIDGET(ValueOutput)
 DECLARE_WIDGET(Input)
 DECLARE_WIDGET(MenuBar)
-DECLARE_WIDGET(CheckButton)
-DECLARE_WIDGET(RadioButton)
 
-DECLARE_HIDDEN_WIDGET(Group)
+DECLARE_WIDGET(Button)
+DECLARE_WIDGET(CheckButton)
+DECLARE_WIDGET(LightButton)
+DECLARE_WIDGET(MenuButton)
+DECLARE_WIDGET(RadioButton)
+DECLARE_WIDGET(RadioLightButton)
+DECLARE_WIDGET(RadioRoundButton)
+DECLARE_WIDGET(RepeatButton)
+DECLARE_WIDGET(ReturnButton)
+DECLARE_WIDGET(RoundButton)
+DECLARE_WIDGET(ToggleButton)
+DECLARE_WIDGET(ToggleLightButton)
+DECLARE_WIDGET(ToggleRoundButton)
+
+DECLARE_HIDDEN_OBJECT(Group, Widget)
 DECLARE_WIDGET(TextDisplay)
 DECLARE_WIDGET(TextEditor)
 
-DECLARE_HIDDEN_WIDGET(Box)
+DECLARE_WINDOW(DoubleWindow)
+DECLARE_WINDOW(Window)
+
+DECLARE_HIDDEN_OBJECT(Box, Widget)
 DECLARE_BOX(NoBox)
 DECLARE_BOX(FlatBox)
 DECLARE_BOX(UpBox)
@@ -523,7 +564,7 @@ extern "C"
   mrb_define_method(mrb, _class_fltk3_ ## x, "value=", mrb_fltk3_input_value_set, ARGS_NONE()); \
   ARENA_RESTORE;
 
-#define DEFINE_WIDGET(x, y) \
+#define DEFINE_CLASS(x, y) \
   struct RClass* _class_fltk3_ ## x = mrb_define_class_under(mrb, _class_fltk3, # x, _class_fltk3_ ## y); \
   mrb_define_method(mrb, _class_fltk3_ ## x, "initialize", mrb_fltk3_ ## x ## _init, ARGS_ANY()); \
   ARENA_RESTORE;
@@ -539,10 +580,83 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   mrb_define_module_function(mrb, _class_fltk3, "choice", mrb_fltk3_choice, ARGS_REQ(4));
   mrb_define_module_function(mrb, _class_fltk3, "set_fonts", mrb_fltk3_set_fonts, ARGS_REQ(1));
   mrb_define_module_function(mrb, _class_fltk3, "font_name", mrb_fltk3_font_name, ARGS_REQ(1));
+  mrb_define_module_function(mrb, _class_fltk3, "file_chooser", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
+    mrb_value message, pattern;
+    mrb_get_args(mrb, "SS", &message, &pattern);
+    const char *fname = fltk3::file_chooser(RSTRING_PTR(message), RSTRING_PTR(pattern), NULL);
+    if (fname) {
+      return mrb_str_new_cstr(mrb, fname);
+    }
+    return mrb_nil_value();
+  }, ARGS_REQ(2));
+  ARENA_RESTORE;
+
+  struct RClass* _class_fltk3_Image = mrb_define_class_under(mrb, _class_fltk3, "Image", mrb->object_class);
+  mrb_define_method(mrb, _class_fltk3_Image, "initialize", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
+    mrb_value arg;
+    mrb_get_args(mrb, "o", &arg);
+    mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), arg);
+    return self;
+  }, ARGS_NONE());
+  DEFINE_FIXNUM_PROP_READONLY(Image, Image, w);
+  DEFINE_FIXNUM_PROP_READONLY(Image, Image, h);
+  DEFINE_FIXNUM_PROP_READONLY(Image, Image, d);
+  DEFINE_FIXNUM_PROP_READONLY(Image, Image, ld);
+  mrb_define_module_function(mrb, _class_fltk3_Image, "copy", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
+    CONTEXT_SETUP(Image);
+    ((fltk3::SharedImage*) context->v)->release();
+    mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), mrb_nil_value());
+    return mrb_nil_value();
+  }, ARGS_REQ(1));
+  mrb_define_module_function(mrb, _class_fltk3_Image, "copy", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
+    CONTEXT_SETUP(Image);
+    mrb_value width, height;
+    mrb_get_args(mrb, "ii", &width, &height);
+    fltk3::Image* image = context->v->copy(mrb_fixnum(width), mrb_fixnum(height));
+    if (!image) return mrb_nil_value();
+    mrb_fltk3_Image_context* image_context =
+      (mrb_fltk3_Image_context*) malloc(sizeof(mrb_fltk3_Image_context));
+    if (!image_context) mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc memory");
+    memset(image_context, 0, sizeof(mrb_fltk3_Image_context));
+    image_context->instance = self;
+    image_context->v = image;
+    mrb_value args[1];
+    struct RClass* _class_fltk3 = mrb_class_get(mrb, "FLTK3");
+    struct RClass* _class_fltk3_Image = mrb_class_ptr(mrb_const_get(mrb, mrb_obj_value(_class_fltk3), mrb_intern(mrb, "Image")));
+    args[0] = mrb_obj_value(
+      Data_Wrap_Struct(mrb, mrb->object_class,
+      &fltk3_Image_type, (void*) image_context));
+    return mrb_class_new_instance(mrb, 1, args, _class_fltk3_Image);
+  }, ARGS_REQ(1));
+  DEFINE_CLASS(SharedImage, Image);
+  mrb_define_module_function(mrb, _class_fltk3_SharedImage, "get", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
+    mrb_value filename;
+    mrb_get_args(mrb, "S", &filename);
+    fltk3::Image* image = (fltk3::Image*) fltk3::SharedImage::get(RSTRING_PTR(filename));
+    if (!image) return mrb_nil_value();
+    mrb_fltk3_Image_context* image_context =
+      (mrb_fltk3_Image_context*) malloc(sizeof(mrb_fltk3_Image_context));
+    if (!image_context) mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc memory");
+    memset(image_context, 0, sizeof(mrb_fltk3_Image_context));
+    image_context->instance = self;
+    image_context->v = image;
+    mrb_value args[1];
+    struct RClass* _class_fltk3 = mrb_class_get(mrb, "FLTK3");
+    struct RClass* _class_fltk3_Image = mrb_class_ptr(mrb_const_get(mrb, mrb_obj_value(_class_fltk3), mrb_intern(mrb, "Image")));
+    args[0] = mrb_obj_value(
+      Data_Wrap_Struct(mrb, mrb->object_class,
+      &fltk3_Image_type, (void*) image_context));
+    return mrb_class_new_instance(mrb, 1, args, _class_fltk3_Image);
+  }, ARGS_REQ(1));
   ARENA_RESTORE;
 
   struct RClass* _class_fltk3_Widget = mrb_define_class_under(mrb, _class_fltk3, "Widget", mrb->object_class);
   mrb_define_method(mrb, _class_fltk3_Widget, "initialize", mrb_fltk3_Widget_init, ARGS_ANY());
+  mrb_define_method(mrb, _class_fltk3_Widget, "redraw", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
+    CONTEXT_SETUP(Widget);
+    context->v->redraw();
+    return mrb_nil_value();
+  }, ARGS_NONE());
   mrb_define_method(mrb, _class_fltk3_Widget, "show", mrb_fltk3_widget_show, ARGS_NONE());
   mrb_define_method(mrb, _class_fltk3_Widget, "hide", mrb_fltk3_widget_hide, ARGS_NONE());
   DEFINE_FIXNUM_PROP(Widget, Widget, x);
@@ -554,17 +668,30 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   DEFINE_STR_PROP(Widget, Widget, label);
   mrb_define_method(mrb, _class_fltk3_Widget, "box", mrb_fltk3_widget_box_get, ARGS_NONE());
   mrb_define_method(mrb, _class_fltk3_Widget, "box=", mrb_fltk3_widget_box_set, ARGS_REQ(1));
+  mrb_define_method(mrb, _class_fltk3_Widget, "image", mrb_fltk3_widget_image_get, ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Widget, "image=", mrb_fltk3_widget_image_set, ARGS_REQ(1));
   mrb_define_method(mrb, _class_fltk3_Widget, "visible", mrb_fltk3_widget_visible, ARGS_NONE());
   mrb_define_method(mrb, _class_fltk3_Widget, "callback", mrb_fltk3_widget_callback, ARGS_OPT(1));
   ARENA_RESTORE;
 
-  DEFINE_WIDGET(Button, Widget);
-  DEFINE_WIDGET(ValueOutput, Widget);
-  DEFINE_WIDGET(CheckButton, Widget);
-  DEFINE_WIDGET(RadioButton, Widget);
+  DEFINE_CLASS(ValueOutput, Widget);
 
-  DEFINE_WIDGET(Input, Widget);
-  INHERIT_INPUT_VALUE(Input);
+  DEFINE_CLASS(Button, Widget);
+  DEFINE_CLASS(CheckButton, Button);
+  DEFINE_CLASS(LightButton, Button);
+  DEFINE_CLASS(MenuButton, Button);
+  DEFINE_CLASS(RadioButton, Button);
+  DEFINE_CLASS(RadioLightButton, Button);
+  DEFINE_CLASS(RadioRoundButton, Button);
+  DEFINE_CLASS(RepeatButton, Button);
+  DEFINE_CLASS(ReturnButton, Button);
+  DEFINE_CLASS(RoundButton, Button);
+  DEFINE_CLASS(ToggleButton, Button);
+  DEFINE_CLASS(ToggleLightButton, Button);
+  DEFINE_CLASS(ToggleRoundButton, Button);
+
+  DEFINE_CLASS(Input, Widget);
+  DEFINE_STR_PROP(Input, Widget, value);
 
   struct RClass* _class_fltk3_MenuItem = mrb_define_class_under(mrb, _class_fltk3, "MenuItem", mrb->object_class);
   mrb_define_method(mrb, _class_fltk3_MenuItem, "initialize", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
@@ -580,7 +707,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
     return self;
   }, ARGS_NONE());
 
-  DEFINE_WIDGET(MenuBar, MenuItem);
+  DEFINE_CLASS(MenuBar, MenuItem);
   mrb_define_method(mrb, _class_fltk3_MenuBar, "add", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
     CONTEXT_SETUP(Widget);
     mrb_value b = mrb_nil_value(), caption, shortcut;
@@ -600,9 +727,10 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
     return mrb_class_new_instance(mrb, 1, args, _class_fltk3_MenuItem);
   }, ARGS_NONE());
 
-  DEFINE_WIDGET(Browser, Widget);
-  INHERIT_INPUT_VALUE(Input);
+  DEFINE_CLASS(Group, Widget);
+  INHERIT_GROUP(Group);
 
+  DEFINE_CLASS(Browser, Group);
   mrb_define_method(mrb, _class_fltk3_Browser, "load", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
     CONTEXT_SETUP(Widget);
     mrb_value filename;
@@ -615,81 +743,146 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
     mrb_value line = mrb_nil_value(), text = mrb_nil_value();
     mrb_get_args(mrb, "|i|S", &line, &text);
     if (mrb_nil_p(text)) {
-      int value = ((fltk3::Browser*) context->v)->value();
-      const char* text = ((fltk3::Browser*) context->v)->text(value);
-      return text ? mrb_str_new_cstr(mrb, text) : mrb_nil_value();
-    } else if (mrb_nil_p(text)) {
-      const char* text = ((fltk3::Browser*) context->v)->text(mrb_fixnum(line));
-      return text ? mrb_str_new_cstr(mrb, text) : mrb_nil_value();
+      const char* text = NULL;
+      if (mrb_nil_p(line)) {
+        int value = ((fltk3::Browser*) context->v)->value();
+        text = ((fltk3::Browser*) context->v)->text(value);
+      } else {
+        text = ((fltk3::Browser*) context->v)->text(mrb_fixnum(line));
+      }
+      if (!text) return mrb_nil_value();
+      return mrb_str_new_cstr(mrb, text);
     }
     ((fltk3::Browser*) context->v)->text(mrb_fixnum(line), RSTRING_PTR(text));
     return mrb_nil_value();
   }, ARGS_REQ(1) | ARGS_OPT(1));
-  DEFINE_WIDGET(SelectBrowser, Browser);
+  mrb_define_method(mrb, _class_fltk3_Browser, "icon", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
+    CONTEXT_SETUP(Widget);
+    mrb_value line = mrb_nil_value(), image = mrb_nil_value();
+    mrb_get_args(mrb, "|i|o", &line, &image);
+    if (mrb_nil_p(image)) {
+      fltk3::Image* image = NULL;
+      if (mrb_nil_p(line)) {
+        int value = ((fltk3::Browser*) context->v)->value();
+        image = ((fltk3::Browser*) context->v)->icon(value);
+      } else {
+        image = ((fltk3::Browser*) context->v)->icon(mrb_fixnum(line));
+      }
+      if (!image) return mrb_nil_value();
+      mrb_fltk3_Image_context* image_context =
+        (mrb_fltk3_Image_context*) malloc(sizeof(mrb_fltk3_Image_context));
+      if (!context) mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc memory");
+      memset(image_context, 0, sizeof(mrb_fltk3_Image_context));
+      image_context->instance = self;
+      image_context->v = image;
+      mrb_value args[1];
+      struct RClass* _class_fltk3 = mrb_class_get(mrb, "FLTK3");
+      struct RClass* _class_fltk3_Image = mrb_class_ptr(mrb_const_get(mrb, mrb_obj_value(_class_fltk3), mrb_intern(mrb, "Image")));
+      args[0] = mrb_obj_value(
+        Data_Wrap_Struct(mrb, mrb->object_class,
+        &fltk3_Image_type, (void*) image_context));
+      return mrb_class_new_instance(mrb, 1, args, _class_fltk3_Image);
+    }
+    return mrb_nil_value();
+  }, ARGS_REQ(1) | ARGS_OPT(1));
+  mrb_define_method(mrb, _class_fltk3_Browser, "add", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
+    CONTEXT_SETUP(Widget);
+    mrb_value text = mrb_nil_value();
+    mrb_get_args(mrb, "S", &text);
+    ((fltk3::Browser*) context->v)->add(RSTRING_PTR(text));
+    return mrb_nil_value();
+  }, ARGS_REQ(1));
+  mrb_define_method(mrb, _class_fltk3_Browser, "column_widths", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
+    CONTEXT_SETUP(Widget);
+    const int* widths = ((fltk3::Browser*) context->v)->column_widths();
+    int n = 0;
+    ARENA_SAVE;
+    mrb_value arr = mrb_ary_new(mrb);
+    while (widths[n]) {
+      mrb_ary_push(mrb, arr, mrb_fixnum_value(widths[n]));
+      ARENA_RESTORE;
+      n++;
+    }
+    return arr;
+  }, ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Browser, "column_widths=", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
+    CONTEXT_SETUP(Widget);
+    static int* widths = NULL;
+    if (widths) free((void*) widths);
+    widths = (int*) ((fltk3::Browser*) context->v)->column_widths();
+    mrb_value arr = mrb_nil_value();
+    mrb_get_args(mrb, "A", &arr);
+    int n = 0, len = RARRAY_LEN(arr);
+    widths = (int*) malloc(sizeof(int) * (len+1));
+    for (n = 0; n < len; n++) {
+      widths[n] = mrb_fixnum(mrb_funcall(mrb, RARRAY_PTR(arr)[n], "to_i", 0, NULL));
+    }
+    widths[n] = 0;
+    ((fltk3::Browser*) context->v)->column_widths(widths);
+    return mrb_nil_value();
+  }, ARGS_REQ(1));
 
-  struct RClass* _class_fltk3_Group = mrb_define_class_under(mrb, _class_fltk3, "Group", _class_fltk3_Widget);
-  mrb_define_method(mrb, _class_fltk3_Group, "initialize", mrb_fltk3_Group_init, ARGS_ANY());
-  INHERIT_GROUP(Group);
+  DEFINE_CLASS(SelectBrowser, Browser);
 
-  DEFINE_WIDGET(TextDisplay, Group);
-  DEFINE_WIDGET(TextEditor, TextDisplay);
+  DEFINE_CLASS(TextDisplay, Group);
+  DEFINE_CLASS(TextEditor, TextDisplay);
 
   struct RClass* _class_fltk3_Window = mrb_define_class_under(mrb, _class_fltk3, "Window", _class_fltk3_Widget);
   mrb_define_method(mrb, _class_fltk3_Window, "initialize", mrb_fltk3_Window_init, ARGS_ANY());
   mrb_define_method(mrb, _class_fltk3_Window, "show", mrb_fltk3_window_show, ARGS_OPT(1));
   INHERIT_GROUP(Window);
 
-  DEFINE_WIDGET(DoubleWindow, Window);
+  DEFINE_CLASS(DoubleWindow, Window);
 
-  DEFINE_WIDGET(Box, Widget);
-  DEFINE_WIDGET(NoBox, Box);
-  DEFINE_WIDGET(FlatBox, Box);
-  DEFINE_WIDGET(UpBox, Box);
-  DEFINE_WIDGET(DownBox, Box);
-  DEFINE_WIDGET(ThinUpBox, Box);
-  DEFINE_WIDGET(ThinDownBox, Box);
-  DEFINE_WIDGET(EngravedBox, Box);
-  DEFINE_WIDGET(EmbossedBox, Box);
-  DEFINE_WIDGET(BorderBox, Box);
-  DEFINE_WIDGET(ShadowBox, Box);
-  DEFINE_WIDGET(RoundedBox, Box);
-  DEFINE_WIDGET(RShadowBox, Box);
-  DEFINE_WIDGET(RFlatBox, Box);
-  DEFINE_WIDGET(RoundUpBox, Box);
-  DEFINE_WIDGET(RoundDownBox, Box);
-  DEFINE_WIDGET(DiamondUpBox, Box);
-  DEFINE_WIDGET(DiamondDownBox, Box);
-  DEFINE_WIDGET(OvalBox, Box);
-  DEFINE_WIDGET(OShadowBox, Box);
-  DEFINE_WIDGET(OFlatBox, Box);
-  DEFINE_WIDGET(PlasticUpBox, Box);
-  DEFINE_WIDGET(PlasticDownBox, Box);
-  DEFINE_WIDGET(PlasticThinUpBox, Box);
-  DEFINE_WIDGET(PlasticThinDownBox, Box);
-  DEFINE_WIDGET(PlasticRoundUpBox, Box);
-  DEFINE_WIDGET(PlasticRoundDownBox, Box);
-  DEFINE_WIDGET(ClassicUpBox, Box);
-  DEFINE_WIDGET(ClassicDownBox, Box);
-  DEFINE_WIDGET(ClassicThinUpBox, Box);
-  DEFINE_WIDGET(ClassicThinDownBox, Box);
-  DEFINE_WIDGET(ClassicRoundUpBox, Box);
-  DEFINE_WIDGET(ClassicRoundDownBox, Box);
-  DEFINE_WIDGET(BorderFrame, Box);
-  DEFINE_WIDGET(UpFrame, Box);
-  DEFINE_WIDGET(DownFrame, Box);
-  DEFINE_WIDGET(ThinUpFrame, Box);
-  DEFINE_WIDGET(ThinDownFrame, Box);
-  DEFINE_WIDGET(EngravedFrame, Box);
-  DEFINE_WIDGET(EmbossedFrame, Box);
-  DEFINE_WIDGET(ShadowFrame, Box);
-  DEFINE_WIDGET(RoundedFrame, Box);
-  DEFINE_WIDGET(OvalFrame, Box);
-  DEFINE_WIDGET(PlasticUpFrame, Box);
-  DEFINE_WIDGET(PlasticDownFrame, Box);
-  DEFINE_WIDGET(ClassicUpFrame, Box);
-  DEFINE_WIDGET(ClassicDownFrame, Box);
-  DEFINE_WIDGET(ClassicThinUpFrame, Box);
-  DEFINE_WIDGET(ClassicThinDownFrame, Box);
+  DEFINE_CLASS(Box, Widget);
+  DEFINE_CLASS(NoBox, Box);
+  DEFINE_CLASS(FlatBox, Box);
+  DEFINE_CLASS(UpBox, Box);
+  DEFINE_CLASS(DownBox, Box);
+  DEFINE_CLASS(ThinUpBox, Box);
+  DEFINE_CLASS(ThinDownBox, Box);
+  DEFINE_CLASS(EngravedBox, Box);
+  DEFINE_CLASS(EmbossedBox, Box);
+  DEFINE_CLASS(BorderBox, Box);
+  DEFINE_CLASS(ShadowBox, Box);
+  DEFINE_CLASS(RoundedBox, Box);
+  DEFINE_CLASS(RShadowBox, Box);
+  DEFINE_CLASS(RFlatBox, Box);
+  DEFINE_CLASS(RoundUpBox, Box);
+  DEFINE_CLASS(RoundDownBox, Box);
+  DEFINE_CLASS(DiamondUpBox, Box);
+  DEFINE_CLASS(DiamondDownBox, Box);
+  DEFINE_CLASS(OvalBox, Box);
+  DEFINE_CLASS(OShadowBox, Box);
+  DEFINE_CLASS(OFlatBox, Box);
+  DEFINE_CLASS(PlasticUpBox, Box);
+  DEFINE_CLASS(PlasticDownBox, Box);
+  DEFINE_CLASS(PlasticThinUpBox, Box);
+  DEFINE_CLASS(PlasticThinDownBox, Box);
+  DEFINE_CLASS(PlasticRoundUpBox, Box);
+  DEFINE_CLASS(PlasticRoundDownBox, Box);
+  DEFINE_CLASS(ClassicUpBox, Box);
+  DEFINE_CLASS(ClassicDownBox, Box);
+  DEFINE_CLASS(ClassicThinUpBox, Box);
+  DEFINE_CLASS(ClassicThinDownBox, Box);
+  DEFINE_CLASS(ClassicRoundUpBox, Box);
+  DEFINE_CLASS(ClassicRoundDownBox, Box);
+  DEFINE_CLASS(BorderFrame, Box);
+  DEFINE_CLASS(UpFrame, Box);
+  DEFINE_CLASS(DownFrame, Box);
+  DEFINE_CLASS(ThinUpFrame, Box);
+  DEFINE_CLASS(ThinDownFrame, Box);
+  DEFINE_CLASS(EngravedFrame, Box);
+  DEFINE_CLASS(EmbossedFrame, Box);
+  DEFINE_CLASS(ShadowFrame, Box);
+  DEFINE_CLASS(RoundedFrame, Box);
+  DEFINE_CLASS(OvalFrame, Box);
+  DEFINE_CLASS(PlasticUpFrame, Box);
+  DEFINE_CLASS(PlasticDownFrame, Box);
+  DEFINE_CLASS(ClassicUpFrame, Box);
+  DEFINE_CLASS(ClassicDownFrame, Box);
+  DEFINE_CLASS(ClassicThinUpFrame, Box);
+  DEFINE_CLASS(ClassicThinDownFrame, Box);
 
   struct RClass* _class_fltk3_TextBuffer = mrb_define_class_under(mrb, _class_fltk3, "TextBuffer", mrb->object_class);
   mrb_define_method(mrb, _class_fltk3_TextBuffer, "initialize", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
@@ -704,7 +897,6 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
       &fltk3_TextBuffer_type, (void*) context)));
     return self;
   }, ARGS_NONE());
-
   mrb_define_method(mrb, _class_fltk3_TextDisplay, "buffer", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
     CONTEXT_SETUP(Widget);
     struct RClass* _class_fltk3 = mrb_class_get(mrb, "FLTK3");
@@ -717,8 +909,6 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   }, ARGS_NONE());
   mrb_define_method(mrb, _class_fltk3_TextDisplay, "buffer=", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
     CONTEXT_SETUP(Widget);
-    struct RClass* _class_fltk3 = mrb_class_get(mrb, "FLTK3");
-    struct RClass* _class_fltk3_TextBuffer = mrb_class_ptr(mrb_const_get(mrb, mrb_obj_value(_class_fltk3), mrb_intern(mrb, "TextBuffer")));
     mrb_value textbuffer;
     mrb_get_args(mrb, "o", &textbuffer);
     mrb_value textbuffer_value_context;
@@ -731,6 +921,8 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   DEFINE_FIXNUM_PROP_READONLY(TextBuffer, TextBuffer, length);
   DEFINE_STR_PROP(TextBuffer, TextBuffer, text);
   ARENA_RESTORE;
+
+  fltk3::register_images();
 }
 
 }
