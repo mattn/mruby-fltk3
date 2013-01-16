@@ -7,7 +7,7 @@ window.begin do
   button.callback do
     fn = FLTK3::file_chooser("image file", "*.{bm,bmp,gif,jpg,pbm,pgm,png,ppm,xbm,xpm}")
     image = fn ? FLTK3::SharedImage::get(fn) : nil
-	if image
+    if image
       if image.w > widget.w || image.h > widget.h
         if image.w > image.h
           temp = image.copy(widget.w, widget.h * image.h / image.w)
@@ -15,7 +15,7 @@ window.begin do
           temp = image.copy(widget.w * image.w / image.h, widget.h)
         end
         image.release
-  	  image = temp
+        image = temp
       end
     end
     widget.image = image
