@@ -263,11 +263,23 @@ mrb_fltk3_alert(mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
+mrb_fltk3_choice(mrb_state *mrb, mrb_value self)
+{
+  mrb_value args[4];
+  mrb_get_args(mrb, "SSSS", &args[0], &args[1], &args[2], &args[3]);
+  return fltk3::choice("%s",
+    RSTRING_PTR(args[0]),
+    RSTRING_PTR(args[1]),
+    RSTRING_PTR(args[2]),
+    RSTRING_PTR(args[3])) ? mrb_true_value() : mrb_false_value();
+}
+
+static mrb_value
 mrb_fltk3_ask(mrb_state *mrb, mrb_value self)
 {
-  mrb_value s;
-  mrb_get_args(mrb, "S", &s);
-  return fltk3::ask(RSTRING_PTR(s)) ? mrb_true_value() : mrb_false_value();
+  mrb_value arg;
+  mrb_get_args(mrb, "S", &arg);
+  return fltk3::ask("%s", RSTRING_PTR(arg)) ? mrb_true_value() : mrb_false_value();
 }
 
 static mrb_value
@@ -404,7 +416,6 @@ DECLARE_WIDGET(SelectBrowser)
 DECLARE_WIDGET(Button)
 DECLARE_WIDGET(ValueOutput)
 DECLARE_WIDGET(Input)
-DECLARE_WIDGET(Menu_)
 DECLARE_WIDGET(MenuBar)
 DECLARE_WIDGET(CheckButton)
 DECLARE_WIDGET(RadioButton)
@@ -525,6 +536,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   mrb_define_module_function(mrb, _class_fltk3, "run", mrb_fltk3_run, ARGS_NONE());
   mrb_define_module_function(mrb, _class_fltk3, "alert", mrb_fltk3_alert, ARGS_REQ(1));
   mrb_define_module_function(mrb, _class_fltk3, "ask", mrb_fltk3_ask, ARGS_REQ(1));
+  mrb_define_module_function(mrb, _class_fltk3, "choice", mrb_fltk3_choice, ARGS_REQ(4));
   mrb_define_module_function(mrb, _class_fltk3, "set_fonts", mrb_fltk3_set_fonts, ARGS_REQ(1));
   mrb_define_module_function(mrb, _class_fltk3, "font_name", mrb_fltk3_font_name, ARGS_REQ(1));
   ARENA_RESTORE;
@@ -565,6 +577,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
     mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), mrb_obj_value(
       Data_Wrap_Struct(mrb, mrb->object_class,
       &fltk3_MenuItem_type, (void*) context)));
+    return self;
   }, ARGS_NONE());
 
   DEFINE_WIDGET(MenuBar, MenuItem);
@@ -689,6 +702,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
     mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), mrb_obj_value(
       Data_Wrap_Struct(mrb, mrb->object_class,
       &fltk3_TextBuffer_type, (void*) context)));
+    return self;
   }, ARGS_NONE());
 
   mrb_define_method(mrb, _class_fltk3_TextDisplay, "buffer", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
