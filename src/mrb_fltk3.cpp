@@ -602,7 +602,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   DEFINE_FIXNUM_PROP_READONLY(Image, Image, h);
   DEFINE_FIXNUM_PROP_READONLY(Image, Image, d);
   DEFINE_FIXNUM_PROP_READONLY(Image, Image, ld);
-  mrb_define_module_function(mrb, _class_fltk3_Image, "copy", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
+  mrb_define_module_function(mrb, _class_fltk3_Image, "release", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
     CONTEXT_SETUP(Image);
     ((fltk3::SharedImage*) context->v)->release();
     mrb_iv_set(mrb, self, mrb_intern(mrb, "context"), mrb_nil_value());
