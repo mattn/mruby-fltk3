@@ -925,6 +925,11 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   fltk3::register_images();
 }
 
+void
+mrb_mruby_fltk3_gem_final(mrb_state* mrb)
+{
+}
+
 }
 
 /* vim:set et ts=2 sts=2 sw=2 tw=0: */
