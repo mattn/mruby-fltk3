@@ -518,30 +518,30 @@ DECLARE_BOX(ClassicThinDownFrame)
 extern "C"
 {
 #define INHERIT_GROUP(x) \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "begin", mrb_fltk3_group_begin, ARGS_NONE()); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "end", mrb_fltk3_group_end, ARGS_NONE()); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "resizable", mrb_fltk3_group_resizable_get, ARGS_NONE()); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "resizable=", mrb_fltk3_group_resizable_set, ARGS_REQ(1)); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "begin", mrb_fltk3_group_begin, MRB_ARGS_NONE()); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "end", mrb_fltk3_group_end, MRB_ARGS_NONE()); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "resizable", mrb_fltk3_group_resizable_get, MRB_ARGS_NONE()); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "resizable=", mrb_fltk3_group_resizable_set, MRB_ARGS_REQ(1)); \
   ARENA_RESTORE;
 
 #define DEFINE_FIXNUM_PROP_READONLY(x, y, z) \
   mrb_define_method(mrb, _class_fltk3_ ## x, # z, [] (mrb_state* mrb, mrb_value self) -> mrb_value { \
     CONTEXT_SETUP(y); \
     return mrb_fixnum_value(((fltk3::x*) context->v)->z()); \
-  }, ARGS_NONE());
+  }, MRB_ARGS_NONE());
 
 #define DEFINE_FIXNUM_PROP(x, y, z) \
   mrb_define_method(mrb, _class_fltk3_ ## x, # z, [] (mrb_state* mrb, mrb_value self) -> mrb_value { \
     CONTEXT_SETUP(y); \
     return mrb_fixnum_value(((fltk3::x*) context->v)->z()); \
-  }, ARGS_NONE()); \
+  }, MRB_ARGS_NONE()); \
   mrb_define_method(mrb, _class_fltk3_ ## x, # z "=", [] (mrb_state* mrb, mrb_value self) -> mrb_value { \
     CONTEXT_SETUP(y); \
     mrb_value vv; \
     mrb_get_args(mrb, "i", &vv); \
     ((fltk3::x*) context->v)->z(mrb_fixnum(vv)); \
     return mrb_nil_value(); \
-  }, ARGS_NONE()); \
+  }, MRB_ARGS_NONE()); \
   ARENA_RESTORE;
 
 #define DEFINE_STR_PROP(x, y, z) \
@@ -549,24 +549,24 @@ extern "C"
     CONTEXT_SETUP(y); \
     const char* vv = ((fltk3::x*) context->v)->z(); \
     return vv ? mrb_str_new_cstr(mrb, vv) : mrb_nil_value(); \
-  }, ARGS_NONE()); \
+  }, MRB_ARGS_NONE()); \
   mrb_define_method(mrb, _class_fltk3_ ## x, # z "=", [] (mrb_state* mrb, mrb_value self) -> mrb_value { \
     CONTEXT_SETUP(y); \
     mrb_value vv; \
     mrb_get_args(mrb, "S", &vv); \
     ((fltk3::x*) context->v)->z(RSTRING_PTR(vv)); \
     return mrb_nil_value(); \
-  }, ARGS_NONE()); \
+  }, MRB_ARGS_NONE()); \
   ARENA_RESTORE;
 
 #define INHERIT_INPUT_VALUE(x) \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "value", mrb_fltk3_input_value_get, ARGS_NONE()); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "value=", mrb_fltk3_input_value_set, ARGS_NONE()); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "value", mrb_fltk3_input_value_get, MRB_ARGS_NONE()); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "value=", mrb_fltk3_input_value_set, MRB_ARGS_NONE()); \
   ARENA_RESTORE;
 
 #define DEFINE_CLASS(x, y) \
   struct RClass* _class_fltk3_ ## x = mrb_define_class_under(mrb, _class_fltk3, # x, _class_fltk3_ ## y); \
-  mrb_define_method(mrb, _class_fltk3_ ## x, "initialize", mrb_fltk3_ ## x ## _init, ARGS_ANY()); \
+  mrb_define_method(mrb, _class_fltk3_ ## x, "initialize", mrb_fltk3_ ## x ## _init, MRB_ARGS_ANY()); \
   ARENA_RESTORE;
 
 void
@@ -574,12 +574,12 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
 {
   ARENA_SAVE;
   struct RClass* _class_fltk3 = mrb_define_module(mrb, "FLTK3");
-  mrb_define_module_function(mrb, _class_fltk3, "run", mrb_fltk3_run, ARGS_NONE());
-  mrb_define_module_function(mrb, _class_fltk3, "alert", mrb_fltk3_alert, ARGS_REQ(1));
-  mrb_define_module_function(mrb, _class_fltk3, "ask", mrb_fltk3_ask, ARGS_REQ(1));
-  mrb_define_module_function(mrb, _class_fltk3, "choice", mrb_fltk3_choice, ARGS_REQ(4));
-  mrb_define_module_function(mrb, _class_fltk3, "set_fonts", mrb_fltk3_set_fonts, ARGS_REQ(1));
-  mrb_define_module_function(mrb, _class_fltk3, "font_name", mrb_fltk3_font_name, ARGS_REQ(1));
+  mrb_define_module_function(mrb, _class_fltk3, "run", mrb_fltk3_run, MRB_ARGS_NONE());
+  mrb_define_module_function(mrb, _class_fltk3, "alert", mrb_fltk3_alert, MRB_ARGS_REQ(1));
+  mrb_define_module_function(mrb, _class_fltk3, "ask", mrb_fltk3_ask, MRB_ARGS_REQ(1));
+  mrb_define_module_function(mrb, _class_fltk3, "choice", mrb_fltk3_choice, MRB_ARGS_REQ(4));
+  mrb_define_module_function(mrb, _class_fltk3, "set_fonts", mrb_fltk3_set_fonts, MRB_ARGS_REQ(1));
+  mrb_define_module_function(mrb, _class_fltk3, "font_name", mrb_fltk3_font_name, MRB_ARGS_REQ(1));
   mrb_define_module_function(mrb, _class_fltk3, "file_chooser", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
     mrb_value message, pattern;
     mrb_get_args(mrb, "SS", &message, &pattern);
@@ -588,7 +588,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
       return mrb_str_new_cstr(mrb, fname);
     }
     return mrb_nil_value();
-  }, ARGS_REQ(2));
+  }, MRB_ARGS_REQ(2));
   ARENA_RESTORE;
 
   struct RClass* _class_fltk3_Image = mrb_define_class_under(mrb, _class_fltk3, "Image", mrb->object_class);
@@ -597,7 +597,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
     mrb_get_args(mrb, "o", &arg);
     mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "context"), arg);
     return self;
-  }, ARGS_NONE());
+  }, MRB_ARGS_NONE());
   DEFINE_FIXNUM_PROP_READONLY(Image, Image, w);
   DEFINE_FIXNUM_PROP_READONLY(Image, Image, h);
   DEFINE_FIXNUM_PROP_READONLY(Image, Image, d);
@@ -607,7 +607,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
     ((fltk3::SharedImage*) context->v)->release();
     mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "context"), mrb_nil_value());
     return mrb_nil_value();
-  }, ARGS_REQ(1));
+  }, MRB_ARGS_REQ(1));
   mrb_define_module_function(mrb, _class_fltk3_Image, "copy", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
     CONTEXT_SETUP(Image);
     mrb_value width, height;
@@ -627,7 +627,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
       Data_Wrap_Struct(mrb, mrb->object_class,
       &fltk3_Image_type, (void*) image_context));
     return mrb_class_new_instance(mrb, 1, args, _class_fltk3_Image);
-  }, ARGS_REQ(1));
+  }, MRB_ARGS_REQ(1));
   DEFINE_CLASS(SharedImage, Image);
   mrb_define_module_function(mrb, _class_fltk3_SharedImage, "get", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
     mrb_value filename;
@@ -647,18 +647,18 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
       Data_Wrap_Struct(mrb, mrb->object_class,
       &fltk3_Image_type, (void*) image_context));
     return mrb_class_new_instance(mrb, 1, args, _class_fltk3_Image);
-  }, ARGS_REQ(1));
+  }, MRB_ARGS_REQ(1));
   ARENA_RESTORE;
 
   struct RClass* _class_fltk3_Widget = mrb_define_class_under(mrb, _class_fltk3, "Widget", mrb->object_class);
-  mrb_define_method(mrb, _class_fltk3_Widget, "initialize", mrb_fltk3_Widget_init, ARGS_ANY());
+  mrb_define_method(mrb, _class_fltk3_Widget, "initialize", mrb_fltk3_Widget_init, MRB_ARGS_ANY());
   mrb_define_method(mrb, _class_fltk3_Widget, "redraw", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
     CONTEXT_SETUP(Widget);
     context->v->redraw();
     return mrb_nil_value();
-  }, ARGS_NONE());
-  mrb_define_method(mrb, _class_fltk3_Widget, "show", mrb_fltk3_widget_show, ARGS_NONE());
-  mrb_define_method(mrb, _class_fltk3_Widget, "hide", mrb_fltk3_widget_hide, ARGS_NONE());
+  }, MRB_ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Widget, "show", mrb_fltk3_widget_show, MRB_ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Widget, "hide", mrb_fltk3_widget_hide, MRB_ARGS_NONE());
   DEFINE_FIXNUM_PROP(Widget, Widget, x);
   DEFINE_FIXNUM_PROP(Widget, Widget, y);
   DEFINE_FIXNUM_PROP(Widget, Widget, w);
@@ -666,12 +666,12 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   DEFINE_FIXNUM_PROP(Widget, Widget, labelfont);
   DEFINE_FIXNUM_PROP(Widget, Widget, labelsize);
   DEFINE_STR_PROP(Widget, Widget, label);
-  mrb_define_method(mrb, _class_fltk3_Widget, "box", mrb_fltk3_widget_box_get, ARGS_NONE());
-  mrb_define_method(mrb, _class_fltk3_Widget, "box=", mrb_fltk3_widget_box_set, ARGS_REQ(1));
-  mrb_define_method(mrb, _class_fltk3_Widget, "image", mrb_fltk3_widget_image_get, ARGS_NONE());
-  mrb_define_method(mrb, _class_fltk3_Widget, "image=", mrb_fltk3_widget_image_set, ARGS_REQ(1));
-  mrb_define_method(mrb, _class_fltk3_Widget, "visible", mrb_fltk3_widget_visible, ARGS_NONE());
-  mrb_define_method(mrb, _class_fltk3_Widget, "callback", mrb_fltk3_widget_callback, ARGS_OPT(1));
+  mrb_define_method(mrb, _class_fltk3_Widget, "box", mrb_fltk3_widget_box_get, MRB_ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Widget, "box=", mrb_fltk3_widget_box_set, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, _class_fltk3_Widget, "image", mrb_fltk3_widget_image_get, MRB_ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Widget, "image=", mrb_fltk3_widget_image_set, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, _class_fltk3_Widget, "visible", mrb_fltk3_widget_visible, MRB_ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Widget, "callback", mrb_fltk3_widget_callback, MRB_ARGS_OPT(1));
   ARENA_RESTORE;
 
   DEFINE_CLASS(ValueOutput, Widget);
@@ -705,7 +705,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
       Data_Wrap_Struct(mrb, mrb->object_class,
       &fltk3_MenuItem_type, (void*) context)));
     return self;
-  }, ARGS_NONE());
+  }, MRB_ARGS_NONE());
 
   DEFINE_CLASS(MenuBar, MenuItem);
   mrb_define_method(mrb, _class_fltk3_MenuBar, "add", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
@@ -715,7 +715,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
     ((fltk3::MenuBar*) context->v)->add(RSTRING_PTR(caption), mrb_fixnum(shortcut), [] (fltk3::Widget* w, void* d) {
     });
     return mrb_nil_value();
-  }, ARGS_REQ(1));
+  }, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, _class_fltk3_MenuBar, "menu", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
     CONTEXT_SETUP(Widget);
     struct RClass* _class_fltk3 = mrb_class_get(mrb, "FLTK3");
@@ -725,7 +725,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
       Data_Wrap_Struct(mrb, mrb->object_class,
       &fltk3_MenuItem_type, (void*) ((fltk3::MenuBar*) context->v)->menu()));
     return mrb_class_new_instance(mrb, 1, args, _class_fltk3_MenuItem);
-  }, ARGS_NONE());
+  }, MRB_ARGS_NONE());
 
   DEFINE_CLASS(Group, Widget);
   INHERIT_GROUP(Group);
@@ -736,7 +736,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
     mrb_value filename;
     mrb_get_args(mrb, "S", &filename);
     return mrb_fixnum_value(((fltk3::Browser*) context->v)->load(RSTRING_PTR(filename)));
-  }, ARGS_REQ(1));
+  }, MRB_ARGS_REQ(1));
   DEFINE_FIXNUM_PROP(Browser, Widget, value);
   mrb_define_method(mrb, _class_fltk3_Browser, "text", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
     CONTEXT_SETUP(Widget);
@@ -755,7 +755,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
     }
     ((fltk3::Browser*) context->v)->text(mrb_fixnum(line), RSTRING_PTR(text));
     return mrb_nil_value();
-  }, ARGS_REQ(1) | ARGS_OPT(1));
+  }, MRB_ARGS_REQ(1) | MRB_ARGS_OPT(1));
   mrb_define_method(mrb, _class_fltk3_Browser, "icon", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
     CONTEXT_SETUP(Widget);
     mrb_value line = mrb_nil_value(), image = mrb_nil_value();
@@ -784,14 +784,14 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
       return mrb_class_new_instance(mrb, 1, args, _class_fltk3_Image);
     }
     return mrb_nil_value();
-  }, ARGS_REQ(1) | ARGS_OPT(1));
+  }, MRB_ARGS_REQ(1) | MRB_ARGS_OPT(1));
   mrb_define_method(mrb, _class_fltk3_Browser, "add", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
     CONTEXT_SETUP(Widget);
     mrb_value text = mrb_nil_value();
     mrb_get_args(mrb, "S", &text);
     ((fltk3::Browser*) context->v)->add(RSTRING_PTR(text));
     return mrb_nil_value();
-  }, ARGS_REQ(1));
+  }, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, _class_fltk3_Browser, "column_widths", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
     CONTEXT_SETUP(Widget);
     const int* widths = ((fltk3::Browser*) context->v)->column_widths();
@@ -804,7 +804,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
       n++;
     }
     return arr;
-  }, ARGS_NONE());
+  }, MRB_ARGS_NONE());
   mrb_define_method(mrb, _class_fltk3_Browser, "column_widths=", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
     CONTEXT_SETUP(Widget);
     static int* widths = NULL;
@@ -820,7 +820,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
     widths[n] = 0;
     ((fltk3::Browser*) context->v)->column_widths(widths);
     return mrb_nil_value();
-  }, ARGS_REQ(1));
+  }, MRB_ARGS_REQ(1));
 
   DEFINE_CLASS(SelectBrowser, Browser);
 
@@ -828,8 +828,8 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   DEFINE_CLASS(TextEditor, TextDisplay);
 
   struct RClass* _class_fltk3_Window = mrb_define_class_under(mrb, _class_fltk3, "Window", _class_fltk3_Widget);
-  mrb_define_method(mrb, _class_fltk3_Window, "initialize", mrb_fltk3_Window_init, ARGS_ANY());
-  mrb_define_method(mrb, _class_fltk3_Window, "show", mrb_fltk3_window_show, ARGS_OPT(1));
+  mrb_define_method(mrb, _class_fltk3_Window, "initialize", mrb_fltk3_Window_init, MRB_ARGS_ANY());
+  mrb_define_method(mrb, _class_fltk3_Window, "show", mrb_fltk3_window_show, MRB_ARGS_OPT(1));
   INHERIT_GROUP(Window);
 
   DEFINE_CLASS(DoubleWindow, Window);
@@ -896,7 +896,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
       Data_Wrap_Struct(mrb, mrb->object_class,
       &fltk3_TextBuffer_type, (void*) context)));
     return self;
-  }, ARGS_NONE());
+  }, MRB_ARGS_NONE());
   mrb_define_method(mrb, _class_fltk3_TextDisplay, "buffer", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
     CONTEXT_SETUP(Widget);
     struct RClass* _class_fltk3 = mrb_class_get(mrb, "FLTK3");
@@ -906,7 +906,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
       Data_Wrap_Struct(mrb, mrb->object_class,
       &fltk3_TextBuffer_type, (void*) ((fltk3::TextDisplay*) context->v)->buffer()));
     return mrb_class_new_instance(mrb, 1, args, _class_fltk3_TextBuffer);
-  }, ARGS_NONE());
+  }, MRB_ARGS_NONE());
   mrb_define_method(mrb, _class_fltk3_TextDisplay, "buffer=", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
     CONTEXT_SETUP(Widget);
     mrb_value textbuffer;
@@ -917,7 +917,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
     Data_Get_Struct(mrb, textbuffer_value_context, &fltk3_TextBuffer_type, textbuffer_context);
     ((fltk3::TextDisplay*) context->v)->buffer(textbuffer_context->v);
     return mrb_nil_value();
-  }, ARGS_REQ(1));
+  }, MRB_ARGS_REQ(1));
   DEFINE_FIXNUM_PROP_READONLY(TextBuffer, TextBuffer, length);
   DEFINE_STR_PROP(TextBuffer, TextBuffer, text);
   ARENA_RESTORE;
