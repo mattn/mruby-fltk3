@@ -23,6 +23,7 @@
 #include <fltk3/LightButton.h>
 #include <fltk3/MenuBar.h>
 #include <fltk3/MenuButton.h>
+#include <fltk3/Choice.h>
 #include <fltk3/RadioButton.h>
 #include <fltk3/RadioLightButton.h>
 #include <fltk3/RadioRoundButton.h>
@@ -183,6 +184,8 @@ mrb_fltk3_widget_classname(fltk3::Widget* w)
   if (dynamic_cast<fltk3::Group*>(w)) return "Group";
   if (dynamic_cast<fltk3::MenuBar*>(w)) return "MenuBar";
   if (dynamic_cast<fltk3::MenuButton*>(w)) return "MenuButton";
+  if (dynamic_cast<fltk3::Choice*>(w)) return "Choice";
+  if (dynamic_cast<fltk3::Menu_*>(w)) return "Menu_";
   if (dynamic_cast<fltk3::RadioLightButton*>(w)) return "RadioLightButton";
   if (dynamic_cast<fltk3::RadioRoundButton*>(w)) return "RadioRoundButton";
   if (dynamic_cast<fltk3::RadioButton*>(w)) return "RadioButton";
