@@ -5,6 +5,13 @@
 #include <fltk3/DoubleWindow.h>
 #include <fltk3/FileChooser.h>
 #include <fltk3/Group.h>
+#include <fltk3/PackedGroup.h>
+#include <fltk3/TabGroup.h>
+#include <fltk3/TiledGroup.h>
+#include <fltk3/ScrollGroup.h>
+#include <fltk3/WizardGroup.h>
+#include <fltk3/SingleWindow.h>
+#include <fltk3/MenuWindow.h>
 #include <fltk3/Input.h>
 #include <fltk3/LightButton.h>
 #include <fltk3/MenuBar.h>
@@ -143,11 +150,18 @@ const char*
 mrb_fltk3_widget_classname(fltk3::Widget* w)
 {
   if (dynamic_cast<fltk3::DoubleWindow*>(w)) return "DoubleWindow";
+  if (dynamic_cast<fltk3::SingleWindow*>(w)) return "SingleWindow";
+  if (dynamic_cast<fltk3::MenuWindow*>(w)) return "MenuWindow";
   if (dynamic_cast<fltk3::Window*>(w)) return "Window";
   if (dynamic_cast<fltk3::TextEditor*>(w)) return "TextEditor";
   if (dynamic_cast<fltk3::TextDisplay*>(w)) return "TextDisplay";
   if (dynamic_cast<fltk3::SelectBrowser*>(w)) return "SelectBrowser";
   if (dynamic_cast<fltk3::Browser*>(w)) return "Browser";
+  if (dynamic_cast<fltk3::PackedGroup*>(w)) return "PackedGroup";
+  if (dynamic_cast<fltk3::TabGroup*>(w)) return "TabGroup";
+  if (dynamic_cast<fltk3::TiledGroup*>(w)) return "TiledGroup";
+  if (dynamic_cast<fltk3::ScrollGroup*>(w)) return "ScrollGroup";
+  if (dynamic_cast<fltk3::WizardGroup*>(w)) return "WizardGroup";
   if (dynamic_cast<fltk3::Group*>(w)) return "Group";
   if (dynamic_cast<fltk3::MenuBar*>(w)) return "MenuBar";
   if (dynamic_cast<fltk3::MenuButton*>(w)) return "MenuButton";
@@ -166,6 +180,24 @@ mrb_fltk3_widget_classname(fltk3::Widget* w)
   if (dynamic_cast<fltk3::Input*>(w)) return "Input";
   if (dynamic_cast<fltk3::ValueOutput*>(w)) return "ValueOutput";
   return "Widget";
+}
+
+void
+mrb_fltk3_widget_forget(mrb_state* mrb, fltk3::Widget* w)
+{
+  if (!w) return;
+  fltk3::Group* g = dynamic_cast<fltk3::Group*>(w);
+  if (g) {
+    for (int i = 0; i < g->children(); i++) {
+      mrb_fltk3_widget_forget(mrb, g->child(i));
+    }
+  }
+  mrb_value instance = mrb_fltk3_registered(mrb, w);
+  if (!mrb_nil_p(instance)) {
+    mrb_fltk3_Widget_context* context = (mrb_fltk3_Widget_context*) DATA_PTR(instance);
+    if (context) context->v = NULL;
+    mrb_fltk3_unregister(mrb, w);
+  }
 }
 
 bool
