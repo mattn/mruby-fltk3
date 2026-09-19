@@ -343,18 +343,6 @@ mrb_fltk3_font_name(mrb_state *mrb, mrb_value self)
   return name ? mrb_str_new_cstr(mrb, name) : mrb_nil_value();
 }
 
-static mrb_value
-mrb_fltk3_file_chooser(mrb_state* mrb, mrb_value self)
-{
-  mrb_value message, pattern;
-  mrb_get_args(mrb, "SS", &message, &pattern);
-  const char *fname = fltk3::file_chooser(RSTRING_CSTR(mrb, message), RSTRING_CSTR(mrb, pattern), NULL);
-  if (fname) {
-    return mrb_str_new_cstr(mrb, fname);
-  }
-  return mrb_nil_value();
-}
-
 extern "C"
 {
 
@@ -370,10 +358,10 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   mrb_define_module_function(mrb, _class_fltk3, "set_fonts", mrb_fltk3_set_fonts, MRB_ARGS_REQ(1));
   mrb_define_module_function(mrb, _class_fltk3, "set_font", mrb_fltk3_set_font, MRB_ARGS_REQ(2));
   mrb_define_module_function(mrb, _class_fltk3, "font_name", mrb_fltk3_font_name, MRB_ARGS_REQ(1));
-  mrb_define_module_function(mrb, _class_fltk3, "file_chooser", mrb_fltk3_file_chooser, MRB_ARGS_REQ(2));
   ARENA_RESTORE;
 
   mrb_fltk3_constants_init(mrb, _class_fltk3);
+  mrb_fltk3_app_init(mrb, _class_fltk3);
   mrb_fltk3_image_init(mrb, _class_fltk3);
   mrb_fltk3_box_init(mrb, _class_fltk3);
   mrb_fltk3_widget_init(mrb, _class_fltk3);

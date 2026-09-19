@@ -385,3 +385,44 @@ assert('FLTK3::CheckBrowser') do
   assert_false cb.checked?(1)
   assert_equal "two", cb.text(2)
 end
+
+assert('FLTK3 colors') do
+  assert_equal [255, 0, 0], FLTK3::get_color(FLTK3::RED)
+  assert_equal [1, 2, 3], FLTK3::get_color(FLTK3::rgb_color(1, 2, 3))
+  FLTK3::set_color(FLTK3::FREE_COLOR, 10, 20, 30)
+  assert_equal [10, 20, 30], FLTK3::get_color(FLTK3::FREE_COLOR)
+  assert_kind_of Integer, FLTK3::color_average(FLTK3::RED, FLTK3::BLUE, 0.5)
+  assert_kind_of Integer, FLTK3::contrast(FLTK3::BLACK, FLTK3::BLACK)
+end
+
+assert('FLTK3 timeouts and handlers') do
+  count = 0
+  id = FLTK3::add_timeout(0.01) { count += 1 }
+  assert_true FLTK3::has_timeout(id)
+  never = FLTK3::add_timeout(10) { count += 100 }
+  FLTK3::remove_timeout(never)
+  assert_false FLTK3::has_timeout(never)
+  idle = FLTK3::add_idle { }
+  assert_true FLTK3::has_idle(idle)
+  FLTK3::remove_idle(idle)
+  assert_false FLTK3::has_idle(idle)
+  FLTK3::wait(0.05)
+  FLTK3::wait(0.05)
+  assert_equal 1, count
+  assert_false FLTK3::has_timeout(id)
+end
+
+assert('FLTK3.warning handler') do
+  got = nil
+  FLTK3::warning { |msg| got = msg }
+  FLTK3::warning("hello")
+  assert_equal "hello", got
+  FLTK3::warning { |msg| }
+end
+
+assert('FLTK3.delete_widget') do
+  b = FLTK3::Button.new(0, 0, 10, 10)
+  FLTK3::delete_widget(b)
+  FLTK3::do_widget_deletion
+  assert_raise(RuntimeError) { b.label }
+end

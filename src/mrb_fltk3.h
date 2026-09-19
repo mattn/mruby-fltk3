@@ -232,6 +232,7 @@ mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                  \
 
 /* Per-area initializers, called from the gem init in this order. */
 void mrb_fltk3_constants_init(mrb_state* mrb, struct RClass* _class_fltk3);
+void mrb_fltk3_app_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_widget_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_image_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_box_init(mrb_state* mrb, struct RClass* _class_fltk3);
