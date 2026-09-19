@@ -23,12 +23,13 @@ window.begin do
     c.callback { log.call("A=#{check1.value} B=#{check2.value}") }
   end
 
+  # children of a group are positioned relative to the group in fltk3
   group = FLTK3::Group.new(10, 130, 340, 70, "radio group")
   group.box = FLTK3::ENGRAVED_FRAME
   group.align = FLTK3::ALIGN_TOP_LEFT | FLTK3::ALIGN_INSIDE
   group.begin do
     %w(Red Green Blue).each_with_index do |name, i|
-      r = FLTK3::RadioRoundButton.new(20 + i * 110, 155, 100, 30, name)
+      r = FLTK3::RadioRoundButton.new(10 + i * 110, 30, 100, 30, name)
       r.value = true if i == 0
       r.callback { log.call("#{name} selected") }
     end
