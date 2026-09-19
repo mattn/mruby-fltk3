@@ -48,6 +48,55 @@ assert('FLTK3::TextBuffer') do
   assert_true ed.buffer.equal?(buf)
 end
 
+assert('FLTK3::TextBuffer editing') do
+  b = FLTK3::TextBuffer.new
+  log = []
+  cb = b.add_modify_callback { |pos, ins, del, restyled, deleted| log << [pos, ins, del] }
+  b.text = "hello world\nsecond line"
+  b << "\nthird"
+  assert_equal 2, b.count_lines(0, b.length)
+  assert_equal [0, 23, 0], log.first
+  b.insert(0, ">> ")
+  assert_equal ">> hello", b.text_range(0, 8)
+  b.remove(0, 3)
+  b.replace(0, 5, "HELLO")
+  assert_equal "HELLO world", b.text_range(0, 11)
+  assert_equal 12, b.line_start(15)
+  assert_equal 23, b.line_end(15)
+  assert_equal 6, b.word_start(8)
+  b.select(0, 5)
+  assert_true b.selected
+  assert_equal [0, 5], b.selection_position
+  assert_equal "HELLO", b.selection_text
+  b.replace_selection("Hi")
+  assert_equal "Hi world", b.text_range(0, 8)
+  b.unselect
+  assert_false b.selected
+  assert_equal 16, b.search_forward(0, "line")
+  assert_nil b.search_forward(0, "nope")
+  b.remove_modify_callback(cb)
+  n = log.size
+  b << "x"
+  assert_equal n, log.size
+end
+
+assert('FLTK3::TextEditor') do
+  b = FLTK3::TextBuffer.new
+  b.text = "abc"
+  ed = FLTK3::TextEditor.new(0, 0, 100, 100)
+  ed.buffer = b
+  ed.insert_position = 1
+  ed.insert("X")
+  assert_equal "aXbc", b.text
+  assert_equal 2, ed.insert_position
+  ed.cursor_color = FLTK3::RED
+  assert_equal FLTK3::RED, ed.cursor_color
+  ed.insert_mode = false
+  assert_false ed.insert_mode
+  ed.kf_select_all
+  assert_true b.selected
+end
+
 assert('FLTK3::Widget colors, alignment and state') do
   w = FLTK3::Widget.new(0, 0, 10, 10, "label")
   w.color = FLTK3::RED
