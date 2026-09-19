@@ -58,6 +58,47 @@ void mrb_fltk3_widget_forget(mrb_state* mrb, fltk3::Widget* w);
 
 bool mrb_fltk3_arg_check(const char* t, mrb_int argc, mrb_value* argv);
 
+/* Calls a block from a native callback.  An exception raised by the block
+ * is stashed and re-raised by FLTK3.run / wait / check, since there is no
+ * Ruby frame to unwind into while fltk3 owns the stack. */
+mrb_value mrb_fltk3_call(mrb_state* mrb, mrb_value proc, mrb_int argc, const mrb_value* argv);
+mrb_value mrb_fltk3_send(mrb_state* mrb, mrb_value self, const char* name, mrb_int argc, const mrb_value* argv);
+void mrb_fltk3_check_exception(mrb_state* mrb);
+
+/* The interpreter that created the widgets, used by virtual overrides
+ * that are entered from fltk3 without a Ruby context. */
+extern mrb_state* mrb_fltk3_state;
+
+/* Widgets created from Ruby are instances of this template so that draw()
+ * and handle() can be overridden in Ruby. */
+struct MrbOverridable {
+  virtual void default_draw() = 0;
+  virtual int default_handle(int event) = 0;
+  /* protected helpers of fltk3::Widget made reachable from Ruby */
+  virtual void default_draw_box() = 0;
+  virtual void default_draw_box(fltk3::Box* b, int x, int y, int w, int h, fltk3::Color c) = 0;
+  virtual void default_draw_label() = 0;
+  virtual void default_draw_label(int x, int y, int w, int h, fltk3::Align a) = 0;
+  virtual ~MrbOverridable() {}
+};
+
+void mrb_fltk3_widget_draw_hook(fltk3::Widget* w, MrbOverridable* o);
+int mrb_fltk3_widget_handle_hook(fltk3::Widget* w, MrbOverridable* o, int event);
+
+template <class T>
+class MrbWidget : public T, public MrbOverridable {
+public:
+  using T::T;
+  void draw() { mrb_fltk3_widget_draw_hook(this, this); }
+  int handle(int event) { return mrb_fltk3_widget_handle_hook(this, this, event); }
+  void default_draw() { T::draw(); }
+  int default_handle(int event) { return T::handle(event); }
+  void default_draw_box() { T::draw_box(); }
+  void default_draw_box(fltk3::Box* b, int x, int y, int w, int h, fltk3::Color c) { T::draw_box(b, x, y, w, h, c); }
+  void default_draw_label() { T::draw_label(); }
+  void default_draw_label(int x, int y, int w, int h, fltk3::Align a) { T::draw_label(x, y, w, h, a); }
+};
+
 #define CONTEXT_SETUP(t) \
     mrb_fltk3_ ## t ## _context* context = mrb_fltk3_ ## t ## _context_get(mrb, self);
 
@@ -83,13 +124,13 @@ mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                  \
   mrb_get_args(mrb, "*", &argv, &argc);                                   \
   fltk3::Widget* w;                                                       \
   if (mrb_fltk3_arg_check("iiii", argc, argv)) {                          \
-    w = new fltk3::x (                                                    \
+    w = new MrbWidget<fltk3::x> (                                         \
       (int) mrb_integer(argv[0]),                                         \
       (int) mrb_integer(argv[1]),                                         \
       (int) mrb_integer(argv[2]),                                         \
       (int) mrb_integer(argv[3]));                                        \
   } else if (mrb_fltk3_arg_check("iiiis", argc, argv)) {                  \
-    w = new fltk3::x (                                                    \
+    w = new MrbWidget<fltk3::x> (                                         \
       (int) mrb_integer(argv[0]),                                         \
       (int) mrb_integer(argv[1]),                                         \
       (int) mrb_integer(argv[2]),                                         \
@@ -111,22 +152,22 @@ mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                  \
   mrb_get_args(mrb, "*", &argv, &argc);                                   \
   fltk3::Widget* w;                                                       \
   if (mrb_fltk3_arg_check("ii", argc, argv)) {                            \
-    w = new fltk3::x (                                                    \
+    w = new MrbWidget<fltk3::x> (                                         \
       (int) mrb_integer(argv[0]),                                         \
       (int) mrb_integer(argv[1]));                                        \
   } else if (mrb_fltk3_arg_check("iis", argc, argv)) {                    \
-    w = new fltk3::x (                                                    \
+    w = new MrbWidget<fltk3::x> (                                         \
       (int) mrb_integer(argv[0]),                                         \
       (int) mrb_integer(argv[1]),                                         \
       RSTRING_CSTR(mrb, argv[2]));                                        \
   } else if (mrb_fltk3_arg_check("iiii", argc, argv)) {                   \
-    w = new fltk3::x (                                                    \
+    w = new MrbWidget<fltk3::x> (                                         \
       (int) mrb_integer(argv[0]),                                         \
       (int) mrb_integer(argv[1]),                                         \
       (int) mrb_integer(argv[2]),                                         \
       (int) mrb_integer(argv[3]));                                        \
   } else if (mrb_fltk3_arg_check("iiiis", argc, argv)) {                  \
-    w = new fltk3::x (                                                    \
+    w = new MrbWidget<fltk3::x> (                                         \
       (int) mrb_integer(argv[0]),                                         \
       (int) mrb_integer(argv[1]),                                         \
       (int) mrb_integer(argv[2]),                                         \
@@ -234,6 +275,7 @@ mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                  \
 /* Per-area initializers, called from the gem init in this order. */
 void mrb_fltk3_constants_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_app_init(mrb_state* mrb, struct RClass* _class_fltk3);
+void mrb_fltk3_draw_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_widget_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_image_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_box_init(mrb_state* mrb, struct RClass* _class_fltk3);

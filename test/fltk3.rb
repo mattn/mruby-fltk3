@@ -446,3 +446,51 @@ assert('FLTK3::RGBImage and Bitmap') do
   assert_true w.deimage.equal?(bm)
   assert_true FLTK3::PNGImage.new("/nonexistent.png").fail?
 end
+
+assert('FLTK3::Widget draw and handle overrides') do
+  klass = Class.new(FLTK3::Widget) do
+    attr_reader :events
+    def initialize(*args)
+      super
+      @events = []
+    end
+    def draw
+      draw_box(FLTK3::FLAT_BOX, FLTK3::WHITE)
+      $custom_drawn = true
+    end
+    def handle(event)
+      @events << event
+      super
+    end
+  end
+  $custom_drawn = false
+  win = FLTK3::Window.new(50, 50)
+  c = klass.new(0, 0, 50, 50)
+  b = FLTK3::Widget.new(0, 0, 10, 10)
+  $block_drawn = false
+  b.draw { $block_drawn = true }
+  b.handle { |w, e| true }
+  win.end
+  win.show
+  FLTK3::add_timeout(0.05) { win.hide }
+  FLTK3::run
+  assert_true $custom_drawn
+  assert_true $block_drawn
+  assert_true c.events.include?(FLTK3::SHOW)
+  assert_false b.handle(FLTK3::PUSH)
+end
+
+assert('exception raised in a callback propagates from FLTK3.run') do
+  win = FLTK3::Window.new(50, 50)
+  win.end
+  win.show
+  FLTK3::add_timeout(0.01) { raise "boom" }
+  e = nil
+  begin
+    FLTK3::run
+  rescue => err
+    e = err
+  end
+  win.hide
+  assert_equal "boom", e.message
+end

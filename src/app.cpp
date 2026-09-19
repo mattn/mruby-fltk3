@@ -72,10 +72,8 @@ mrb_fltk3_handler_call(mrb_fltk3_handler_data* data, bool once)
   if (!mrb_array_p(entry)) return;
   mrb_value proc = mrb_ary_ref(mrb, entry, 0);
   if (once) mrb_hash_delete_key(mrb, mrb_fltk3_handlers(mrb), mrb_fixnum_value(id));
-  int ai = mrb_gc_arena_save(mrb);
   mrb_value arg = mrb_fixnum_value(id);
-  mrb_yield_argv(mrb, proc, 1, &arg);
-  mrb_gc_arena_restore(mrb, ai);
+  mrb_fltk3_call(mrb, proc, 1, &arg);
 }
 
 static void
@@ -213,10 +211,8 @@ mrb_fltk3_message_dispatch(const char* name, void (*fallback)(const char*, ...),
     fallback("%s", buf);
     return;
   }
-  int ai = mrb_gc_arena_save(mrb);
   mrb_value arg = mrb_str_new_cstr(mrb, buf);
-  mrb_yield_argv(mrb, proc, 1, &arg);
-  mrb_gc_arena_restore(mrb, ai);
+  mrb_fltk3_call(mrb, proc, 1, &arg);
 }
 
 static void default_warning(const char* format, ...) { va_list ap; va_start(ap, format); vfprintf(stderr, format, ap); va_end(ap); fputc('\n', stderr); }
@@ -255,8 +251,11 @@ static mrb_value
 mrb_fltk3_wait(mrb_state* mrb, mrb_value self)
 {
   mrb_float t;
-  if (mrb_get_args(mrb, "|f", &t) == 0) return mrb_fixnum_value(fltk3::wait());
-  return mrb_float_value(mrb, fltk3::wait(t));
+  mrb_value ret;
+  if (mrb_get_args(mrb, "|f", &t) == 0) ret = mrb_fixnum_value(fltk3::wait());
+  else ret = mrb_float_value(mrb, fltk3::wait(t));
+  mrb_fltk3_check_exception(mrb);
+  return ret;
 }
 
 static mrb_value
@@ -795,7 +794,11 @@ mrb_fltk3_app_init(mrb_state* mrb, struct RClass* _class_fltk3)
 
   /* event loop */
   mrb_define_module_function(mrb, _class_fltk3, "wait", mrb_fltk3_wait, MRB_ARGS_OPT(1));
-  DEFINE_INT_FUNC(check);
+  mrb_define_module_function(mrb, _class_fltk3, "check", [] (mrb_state* mrb, mrb_value self) -> mrb_value {
+    int r = fltk3::check();
+    mrb_fltk3_check_exception(mrb);
+    return mrb_fixnum_value(r);
+  }, MRB_ARGS_NONE());
   DEFINE_INT_FUNC(ready);
   DEFINE_INT_FUNC(damage);
   DEFINE_VOID_FUNC(redraw);
