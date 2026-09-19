@@ -569,3 +569,35 @@ assert('FLTK3::Tree') do
   t.selectmode = FLTK3::TREE_SELECT_MULTI
   assert_equal FLTK3::TREE_SELECT_MULTI, t.selectmode
 end
+
+assert('FLTK3::Table and TableRow') do
+  klass = Class.new(FLTK3::TableRow) do
+    def draw_cell(context, r, c, x, y, w, h)
+      $cells += 1 if context == FLTK3::Table::CONTEXT_CELL
+    end
+  end
+  $cells = 0
+  win = FLTK3::Window.new(200, 100)
+  t = klass.new(0, 0, 200, 100)
+  t.rows = 5
+  t.cols = 3
+  t.row_height_all = 20
+  t.col_width_all = 50
+  t.col_width(0, 80)
+  assert_equal [5, 3, 80, 50, 20], [t.rows, t.cols, t.col_width(0), t.col_width(1), t.row_height(0)]
+  t.type = FLTK3::TableRow::SELECT_MULTI
+  t.select_row(1)
+  t.select_row(3)
+  assert_equal [1, 3], t.selected_rows
+  assert_true t.row_selected?(1)
+  t.select_all_rows(0)
+  assert_equal [], t.selected_rows
+  t.set_selection(0, 0, 1, 1)
+  assert_equal [0, 0, 1, 1], t.get_selection
+  assert_true t.is_selected(1, 1)
+  win.end
+  win.show
+  FLTK3::add_timeout(0.05) { win.hide }
+  FLTK3::run
+  assert_true $cells > 0
+end

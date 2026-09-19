@@ -282,6 +282,7 @@ void mrb_fltk3_app_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_draw_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_misc_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_tree_init(mrb_state* mrb, struct RClass* _class_fltk3);
+void mrb_fltk3_table_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_widget_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_image_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_box_init(mrb_state* mrb, struct RClass* _class_fltk3);

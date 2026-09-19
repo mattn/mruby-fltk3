@@ -53,6 +53,8 @@
 #include <fltk3/Adjuster.h>
 #include <fltk3/Spinner.h>
 #include <fltk3/Progress.h>
+#include <fltk3/Table.h>
+#include <fltk3/TableRow.h>
 #include <fltk3/Clock.h>
 #include <fltk3/RoundClock.h>
 #include <fltk3/Chart.h>
@@ -201,6 +203,8 @@ mrb_fltk3_widget_classname(fltk3::Widget* w)
   if (dynamic_cast<fltk3::WizardGroup*>(w)) return "WizardGroup";
   if (dynamic_cast<fltk3::Spinner*>(w)) return "Spinner";
   if (dynamic_cast<fltk3::Tree*>(w)) return "Tree";
+  if (dynamic_cast<fltk3::TableRow*>(w)) return "TableRow";
+  if (dynamic_cast<fltk3::Table*>(w)) return "Table";
   if (dynamic_cast<fltk3::InputChoice*>(w)) return "InputChoice";
   if (dynamic_cast<fltk3::ColorChooser*>(w)) return "ColorChooser";
   if (dynamic_cast<fltk3::HelpView*>(w)) return "HelpView";
@@ -475,6 +479,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   mrb_fltk3_text_init(mrb, _class_fltk3);
   mrb_fltk3_misc_init(mrb, _class_fltk3);
   mrb_fltk3_tree_init(mrb, _class_fltk3);
+  mrb_fltk3_table_init(mrb, _class_fltk3);
 
   fltk3::register_images();
 }
