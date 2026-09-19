@@ -12,6 +12,7 @@
 #include <mruby/class.h>
 #include <mruby/variable.h>
 #include <fltk3/Widget.h>
+#include <fltk3/Box.h>
 #include <fltk3/Image.h>
 #include <fltk3/MenuItem.h>
 #include <fltk3/TextBuffer.h>
@@ -29,6 +30,7 @@ mrb_fltk3_ ## x ## _context* mrb_fltk3_ ## x ## _context_get(mrb_state* mrb, mrb
 mrb_value mrb_fltk3_ ## x ## _setup(mrb_state* mrb, mrb_value self, fltk3::x* v);
 
 DECLARE_TYPE(Widget)
+DECLARE_TYPE(Box)
 DECLARE_TYPE(TextBuffer)
 DECLARE_TYPE(Image)
 DECLARE_TYPE(MenuItem)
@@ -218,7 +220,14 @@ mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                  \
     return mrb_nil_value(); \
   }, MRB_ARGS_NONE());
 
+/* textfont/textsize/textcolor, shared by several widget families. */
+#define INHERIT_TEXT_PROPS(x) \
+  DEFINE_INT_PROP(x, Widget, textfont) \
+  DEFINE_INT_PROP(x, Widget, textsize) \
+  DEFINE_INT_PROP(x, Widget, textcolor)
+
 /* Per-area initializers, called from the gem init in this order. */
+void mrb_fltk3_constants_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_widget_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_image_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_box_init(mrb_state* mrb, struct RClass* _class_fltk3);
