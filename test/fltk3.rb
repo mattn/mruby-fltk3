@@ -178,3 +178,35 @@ assert('FLTK3::Window properties') do
   w.set_modal
   assert_true w.modal
 end
+
+assert('FLTK3::Valuator') do
+  s = FLTK3::HorSlider.new(0, 0, 100, 20)
+  s.bounds(0, 10)
+  s.step = 0.5
+  s.value = 3.25
+  assert_equal 3.25, s.value
+  assert_equal 0.0, s.minimum
+  assert_equal 10.0, s.maximum
+  assert_equal 0.5, s.step
+  assert_equal 3.5, s.round(3.3)
+  assert_equal 10.0, s.clamp(20.0)
+  assert_kind_of FLTK3::Valuator, s
+  assert_raise(RuntimeError) { FLTK3::Valuator.new(0, 0, 1, 1) }
+
+  sb = FLTK3::Scrollbar.new(0, 0, 20, 100)
+  sb.linesize = 5
+  assert_equal 5, sb.linesize
+  sb.value(10, 20, 0, 100)
+  assert_equal 10, sb.value
+
+  sp = FLTK3::Spinner.new(0, 0, 50, 20)
+  sp.range(1, 100)
+  sp.value = 8
+  assert_equal 8.0, sp.value
+  assert_equal 100.0, sp.maximum
+
+  pr = FLTK3::Progress.new(0, 0, 100, 20)
+  pr.maximum = 100
+  pr.value = 40
+  assert_equal 40.0, pr.value
+end

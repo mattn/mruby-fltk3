@@ -30,6 +30,16 @@
 #include <fltk3/ToggleLightButton.h>
 #include <fltk3/ToggleRoundButton.h>
 #include <fltk3/ValueOutput.h>
+#include <fltk3/ValueInput.h>
+#include <fltk3/Scrollbar.h>
+#include <fltk3/ValueSlider.h>
+#include <fltk3/Slider.h>
+#include <fltk3/Counter.h>
+#include <fltk3/Dial.h>
+#include <fltk3/Roller.h>
+#include <fltk3/Adjuster.h>
+#include <fltk3/Spinner.h>
+#include <fltk3/Progress.h>
 #include <fltk3/Window.h>
 #include <fltk3/ask.h>
 #include <fltk3/run.h>
@@ -162,6 +172,7 @@ mrb_fltk3_widget_classname(fltk3::Widget* w)
   if (dynamic_cast<fltk3::TiledGroup*>(w)) return "TiledGroup";
   if (dynamic_cast<fltk3::ScrollGroup*>(w)) return "ScrollGroup";
   if (dynamic_cast<fltk3::WizardGroup*>(w)) return "WizardGroup";
+  if (dynamic_cast<fltk3::Spinner*>(w)) return "Spinner";
   if (dynamic_cast<fltk3::Group*>(w)) return "Group";
   if (dynamic_cast<fltk3::MenuBar*>(w)) return "MenuBar";
   if (dynamic_cast<fltk3::MenuButton*>(w)) return "MenuButton";
@@ -179,6 +190,16 @@ mrb_fltk3_widget_classname(fltk3::Widget* w)
   if (dynamic_cast<fltk3::Button*>(w)) return "Button";
   if (dynamic_cast<fltk3::Input*>(w)) return "Input";
   if (dynamic_cast<fltk3::ValueOutput*>(w)) return "ValueOutput";
+  if (dynamic_cast<fltk3::ValueInput*>(w)) return "ValueInput";
+  if (dynamic_cast<fltk3::Scrollbar*>(w)) return "Scrollbar";
+  if (dynamic_cast<fltk3::ValueSlider*>(w)) return "ValueSlider";
+  if (dynamic_cast<fltk3::Slider*>(w)) return "Slider";
+  if (dynamic_cast<fltk3::Counter*>(w)) return "Counter";
+  if (dynamic_cast<fltk3::Dial*>(w)) return "Dial";
+  if (dynamic_cast<fltk3::Roller*>(w)) return "Roller";
+  if (dynamic_cast<fltk3::Adjuster*>(w)) return "Adjuster";
+  if (dynamic_cast<fltk3::Valuator*>(w)) return "Valuator";
+  if (dynamic_cast<fltk3::Progress*>(w)) return "Progress";
   return "Widget";
 }
 
@@ -308,6 +329,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   mrb_fltk3_group_init(mrb, _class_fltk3);
   mrb_fltk3_button_init(mrb, _class_fltk3);
   mrb_fltk3_input_init(mrb, _class_fltk3);
+  mrb_fltk3_valuator_init(mrb, _class_fltk3);
   mrb_fltk3_menu_init(mrb, _class_fltk3);
   mrb_fltk3_browser_init(mrb, _class_fltk3);
   mrb_fltk3_text_init(mrb, _class_fltk3);

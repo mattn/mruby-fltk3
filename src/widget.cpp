@@ -2,13 +2,11 @@
 #include <fltk3/Box.h>
 #include <fltk3/Group.h>
 #include <fltk3/Window.h>
-#include <fltk3/ValueOutput.h>
 
 /*********************************************************
  * FLTK3::Widget
  *********************************************************/
 DECLARE_WIDGET(Widget)
-DECLARE_WIDGET(ValueOutput)
 
 static mrb_value
 mrb_fltk3_widget_box_get(mrb_state *mrb, mrb_value self)
@@ -439,8 +437,6 @@ mrb_fltk3_widget_init(mrb_state* mrb, struct RClass* _class_fltk3)
   mrb_define_method(mrb, _class_fltk3_Widget, "contains", mrb_fltk3_widget_contains, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, _class_fltk3_Widget, "inside", mrb_fltk3_widget_inside, MRB_ARGS_REQ(1));
   ARENA_RESTORE;
-
-  DEFINE_CLASS(ValueOutput, Widget);
 }
 
 /* vim:set et ts=2 sts=2 sw=2 tw=0: */
