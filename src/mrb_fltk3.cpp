@@ -91,6 +91,7 @@ mrb_fltk3_ ## x ## _wrap(mrb_state* mrb, fltk3::x* v, const char* klass) \
 }
 
 DEFINE_TYPE(Widget)
+DEFINE_TYPE(Box)
 DEFINE_TYPE(TextBuffer)
 DEFINE_TYPE(Image)
 DEFINE_TYPE(MenuItem)
@@ -268,9 +269,10 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   mrb_define_module_function(mrb, _class_fltk3, "file_chooser", mrb_fltk3_file_chooser, MRB_ARGS_REQ(2));
   ARENA_RESTORE;
 
+  mrb_fltk3_constants_init(mrb, _class_fltk3);
   mrb_fltk3_image_init(mrb, _class_fltk3);
-  mrb_fltk3_widget_init(mrb, _class_fltk3);
   mrb_fltk3_box_init(mrb, _class_fltk3);
+  mrb_fltk3_widget_init(mrb, _class_fltk3);
   mrb_fltk3_group_init(mrb, _class_fltk3);
   mrb_fltk3_button_init(mrb, _class_fltk3);
   mrb_fltk3_input_init(mrb, _class_fltk3);
