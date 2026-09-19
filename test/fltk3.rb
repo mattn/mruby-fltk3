@@ -426,3 +426,23 @@ assert('FLTK3.delete_widget') do
   FLTK3::do_widget_deletion
   assert_raise(RuntimeError) { b.label }
 end
+
+assert('FLTK3::RGBImage and Bitmap') do
+  rgb = FLTK3::RGBImage.new("\x01\x02\x03" * 4, 2, 2)
+  assert_equal [2, 2, 3], [rgb.w, rgb.h, rgb.d]
+  assert_equal [1, 2, 3], rgb.data.bytes.first(3)
+  copy = rgb.copy(4, 4)
+  assert_kind_of FLTK3::RGBImage, copy
+  assert_equal 4, copy.w
+  assert_raise(ArgumentError) { FLTK3::RGBImage.new("ab", 2, 2) }
+  bm = FLTK3::Bitmap.new("\xff\x00", 8, 2)
+  assert_equal [8, 2, 0], [bm.w, bm.h, bm.d]
+  px = FLTK3::Pixmap.new(["2 2 2 1", "  c None", "x c #ff0000", "x ", " x"])
+  assert_equal [2, 2, 1], [px.w, px.h, px.d]
+  w = FLTK3::Widget.new(0, 0, 10, 10)
+  w.image = px
+  assert_true w.image.equal?(px)
+  w.deimage = bm
+  assert_true w.deimage.equal?(bm)
+  assert_true FLTK3::PNGImage.new("/nonexistent.png").fail?
+end

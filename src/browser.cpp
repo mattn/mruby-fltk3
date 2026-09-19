@@ -58,7 +58,8 @@ mrb_fltk3_browser_icon(mrb_state* mrb, mrb_value self)
   mrb_int argc = mrb_get_args(mrb, "|io", &line, &image);
   if (argc < 2) {
     if (argc == 0) line = ((fltk3::Browser*) context->v)->value();
-    return mrb_fltk3_Image_wrap(mrb, ((fltk3::Browser*) context->v)->icon((int) line), "Image");
+    fltk3::Image* image = ((fltk3::Browser*) context->v)->icon((int) line);
+    return mrb_fltk3_Image_wrap(mrb, image, mrb_fltk3_image_classname(image));
   }
   ((fltk3::Browser*) context->v)->icon((int) line, mrb_fltk3_Image_ptr(mrb, image));
   return mrb_nil_value();
