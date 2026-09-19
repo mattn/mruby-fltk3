@@ -238,6 +238,7 @@ void mrb_fltk3_box_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_group_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_button_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_input_init(mrb_state* mrb, struct RClass* _class_fltk3);
+void mrb_fltk3_valuator_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_menu_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_browser_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_text_init(mrb_state* mrb, struct RClass* _class_fltk3);
