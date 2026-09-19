@@ -541,3 +541,31 @@ assert('FLTK3::FileChooser') do
   fc.directory = "/tmp"
   assert_equal "/tmp", fc.directory
 end
+
+assert('FLTK3::Tree') do
+  t = FLTK3::Tree.new(0, 0, 200, 200)
+  t.root_label = "Root"
+  a = t.add("Fruits/Apple")
+  t << "Fruits/Banana"
+  t.add("Vegetables/Carrot")
+  assert_equal "Apple", a.label
+  assert_equal "Fruits", a.parent.label
+  assert_equal "Banana", t["Fruits/Banana"].label
+  assert_nil t["Nope"]
+  labels = []
+  t.each { |i| labels << i.label }
+  assert_equal ["Root", "Fruits", "Apple", "Banana", "Vegetables", "Carrot"], labels
+  f = t["Fruits"]
+  assert_equal ["Apple", "Banana"], f.children_items.map(&:label)
+  t.insert(f, "Cherry", 1)
+  assert_equal ["Apple", "Cherry", "Banana"], f.children_items.map(&:label)
+  assert_true t.select("Fruits/Apple")
+  assert_true t.is_selected(a)
+  assert_equal ["Apple"], t.selected_items.map(&:label)
+  t.close("Fruits")
+  assert_false t.is_open("Fruits")
+  t.remove(t["Fruits/Cherry"])
+  assert_equal 2, f.children
+  t.selectmode = FLTK3::TREE_SELECT_MULTI
+  assert_equal FLTK3::TREE_SELECT_MULTI, t.selectmode
+end
