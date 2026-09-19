@@ -248,11 +248,29 @@ mrb_fltk3_scrollgroup_scroll_to(mrb_state *mrb, mrb_value self)
 /*********************************************************
  * FLTK3::Window
  *********************************************************/
+/* show          -> Window::show()
+ * show(argv)    -> Window::show(argc, argv), which also parses the standard
+ *                  fltk3 command line switches and records WM_COMMAND */
 static mrb_value
 mrb_fltk3_window_show(mrb_state *mrb, mrb_value self)
 {
   CONTEXT_SETUP(Widget);
-  ((fltk3::Window*) context->v)->show(0, NULL);
+  mrb_value args = mrb_nil_value();
+  mrb_get_args(mrb, "|A", &args);
+  fltk3::Window* w = (fltk3::Window*) context->v;
+  if (mrb_nil_p(args) || RARRAY_LEN(args) == 0) {
+    w->show();
+    return mrb_nil_value();
+  }
+  int argc = (int) RARRAY_LEN(args);
+  char** argv = (char**) malloc(sizeof(char*) * (argc + 1));
+  if (!argv) mrb_raise(mrb, E_RUNTIME_ERROR, "can't alloc memory");
+  for (int i = 0; i < argc; i++) {
+    argv[i] = (char*) RSTRING_CSTR(mrb, mrb_ary_ref(mrb, args, i));
+  }
+  argv[argc] = NULL;
+  w->show(argc, argv);
+  free(argv);
   return mrb_nil_value();
 }
 
@@ -404,7 +422,7 @@ mrb_fltk3_group_init(mrb_state* mrb, struct RClass* _class_fltk3)
   ARENA_RESTORE;
 
   DEFINE_CLASS(Window, Group);
-  mrb_define_method(mrb, _class_fltk3_Window, "show", mrb_fltk3_window_show, MRB_ARGS_NONE());
+  mrb_define_method(mrb, _class_fltk3_Window, "show", mrb_fltk3_window_show, MRB_ARGS_OPT(1));
   mrb_define_method(mrb, _class_fltk3_Window, "size_range", mrb_fltk3_window_size_range, MRB_ARGS_REQ(2) | MRB_ARGS_OPT(5));
   mrb_define_method(mrb, _class_fltk3_Window, "fullscreen_off", mrb_fltk3_window_fullscreen_off, MRB_ARGS_OPT(4));
   mrb_define_method(mrb, _class_fltk3_Window, "hotspot", mrb_fltk3_window_hotspot, MRB_ARGS_REQ(1) | MRB_ARGS_OPT(1));
