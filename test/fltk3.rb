@@ -292,3 +292,47 @@ assert('FLTK3.set_font') do
   FLTK3::set_font(FLTK3::FREE_FONT + 1, FLTK3::FREE_FONT)
   assert_equal "DejaVu Sans", FLTK3::font_name(FLTK3::FREE_FONT + 1)
 end
+
+assert('FLTK3::Browser lines and selection') do
+  b = FLTK3::HoldBrowser.new(0, 0, 200, 100)
+  b << "banana" << "apple"
+  b.insert(1, "first")
+  assert_equal 3, b.size
+  assert_equal "first", b.text(1)
+  lines = []
+  b.each { |t, i| lines << [i, t] }
+  assert_equal [[1, "first"], [2, "banana"], [3, "apple"]], lines
+  b.select(2)
+  assert_equal 2, b.value
+  assert_true b.selected?(2)
+  assert_equal "banana", b.text
+  b.sort
+  assert_equal ["apple", "banana", "first"], (1..3).map { |i| b.text(i) }
+  b.swap(1, 3)
+  assert_equal "first", b.text(1)
+  b.remove(1)
+  assert_equal 2, b.size
+  b.deselect
+  assert_equal 0, b.value
+  b.clear
+  assert_equal 0, b.size
+
+  m = FLTK3::MultiBrowser.new(0, 0, 10, 10)
+  m << "a" << "b" << "c"
+  m.select(1)
+  m.select(3)
+  assert_equal [1, 3], m.selected_lines
+end
+
+assert('FLTK3::CheckBrowser') do
+  cb = FLTK3::CheckBrowser.new(0, 0, 10, 10)
+  cb.add("one")
+  cb.add("two", true)
+  assert_equal 2, cb.nitems
+  assert_equal [2], cb.checked_items
+  cb.check_all
+  assert_equal 2, cb.nchecked
+  cb.checked(1, false)
+  assert_false cb.checked?(1)
+  assert_equal "two", cb.text(2)
+end
