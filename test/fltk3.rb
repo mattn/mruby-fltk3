@@ -210,3 +210,30 @@ assert('FLTK3::Valuator') do
   pr.value = 40
   assert_equal 40.0, pr.value
 end
+
+assert('FLTK3::Input editing') do
+  i = FLTK3::Input.new(0, 0, 100, 20)
+  i.value = "hello world"
+  assert_equal 11, i.size
+  i.position = 5
+  assert_equal 5, i.position
+  i.insert(",")
+  assert_equal "hello, world", i.value
+  i.position(0, 5)
+  assert_equal 5, i.mark
+  i.cut
+  assert_equal ", world", i.value
+  i.replace(0, 0, "HELLO")
+  assert_equal "HELLO, world", i.value
+  i.readonly = true
+  assert_true i.readonly
+  i.value = nil
+  assert_equal "", i.value
+
+  o = FLTK3::Output.new(0, 0, 10, 10)
+  assert_true o.readonly
+  m = FLTK3::MultilineInput.new(0, 0, 10, 10)
+  m.wrap = true
+  assert_equal FLTK3::MULTILINE_INPUT_WRAP, m.type
+  assert_equal FLTK3::INT_INPUT, FLTK3::IntInput.new(0, 0, 1, 1).input_type
+end

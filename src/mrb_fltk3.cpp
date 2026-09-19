@@ -13,6 +13,13 @@
 #include <fltk3/SingleWindow.h>
 #include <fltk3/MenuWindow.h>
 #include <fltk3/Input.h>
+#include <fltk3/Output.h>
+#include <fltk3/MultilineInput.h>
+#include <fltk3/MultilineOutput.h>
+#include <fltk3/IntInput.h>
+#include <fltk3/FloatInput.h>
+#include <fltk3/SecretInput.h>
+#include <fltk3/FileInput.h>
 #include <fltk3/LightButton.h>
 #include <fltk3/MenuBar.h>
 #include <fltk3/MenuButton.h>
@@ -188,6 +195,13 @@ mrb_fltk3_widget_classname(fltk3::Widget* w)
   if (dynamic_cast<fltk3::RepeatButton*>(w)) return "RepeatButton";
   if (dynamic_cast<fltk3::ReturnButton*>(w)) return "ReturnButton";
   if (dynamic_cast<fltk3::Button*>(w)) return "Button";
+  if (dynamic_cast<fltk3::FileInput*>(w)) return "FileInput";
+  if (dynamic_cast<fltk3::SecretInput*>(w)) return "SecretInput";
+  if (dynamic_cast<fltk3::FloatInput*>(w)) return "FloatInput";
+  if (dynamic_cast<fltk3::IntInput*>(w)) return "IntInput";
+  if (dynamic_cast<fltk3::MultilineOutput*>(w)) return "MultilineOutput";
+  if (dynamic_cast<fltk3::MultilineInput*>(w)) return "MultilineInput";
+  if (dynamic_cast<fltk3::Output*>(w)) return "Output";
   if (dynamic_cast<fltk3::Input*>(w)) return "Input";
   if (dynamic_cast<fltk3::ValueOutput*>(w)) return "ValueOutput";
   if (dynamic_cast<fltk3::ValueInput*>(w)) return "ValueInput";
