@@ -1,6 +1,9 @@
 #!mruby
 
 # A widget that draws itself and reacts to mouse events.
+#
+# In fltk3 both drawing coordinates and FLTK3::event_x/event_y inside
+# handle are relative to the widget's own origin.
 
 class Canvas < FLTK3::Widget
   def initialize(*args)
@@ -29,12 +32,12 @@ class Canvas < FLTK3::Widget
       if FLTK3::event_button == FLTK3::RIGHT_MOUSE
         @strokes.clear
       else
-        @strokes << [[FLTK3::event_x - x, FLTK3::event_y - y]]
+        @strokes << [[FLTK3::event_x, FLTK3::event_y]]
       end
       redraw
       true
     when FLTK3::DRAG
-      @strokes.last << [FLTK3::event_x - x, FLTK3::event_y - y]
+      @strokes.last << [FLTK3::event_x, FLTK3::event_y]
       redraw
       true
     else
