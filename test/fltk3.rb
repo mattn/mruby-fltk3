@@ -285,3 +285,10 @@ assert('FLTK3::Choice') do
   assert_equal "two", c.text
   assert_kind_of FLTK3::Menu_, c
 end
+
+assert('FLTK3.set_font') do
+  FLTK3::set_font(FLTK3::FREE_FONT, " DejaVu Sans")
+  assert_equal "DejaVu Sans", FLTK3::font_name(FLTK3::FREE_FONT)
+  FLTK3::set_font(FLTK3::FREE_FONT + 1, FLTK3::FREE_FONT)
+  assert_equal "DejaVu Sans", FLTK3::font_name(FLTK3::FREE_FONT + 1)
+end
