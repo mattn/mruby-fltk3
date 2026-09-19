@@ -133,6 +133,7 @@ DEFINE_TYPE(TextBuffer)
 DEFINE_TYPE(Image)
 DEFINE_TYPE(MenuItem)
 DEFINE_TYPE(FileChooser)
+DEFINE_TYPE(TreeItem)
 
 static mrb_value
 mrb_fltk3_registry(mrb_state* mrb)
@@ -199,6 +200,7 @@ mrb_fltk3_widget_classname(fltk3::Widget* w)
   if (dynamic_cast<fltk3::ScrollGroup*>(w)) return "ScrollGroup";
   if (dynamic_cast<fltk3::WizardGroup*>(w)) return "WizardGroup";
   if (dynamic_cast<fltk3::Spinner*>(w)) return "Spinner";
+  if (dynamic_cast<fltk3::Tree*>(w)) return "Tree";
   if (dynamic_cast<fltk3::InputChoice*>(w)) return "InputChoice";
   if (dynamic_cast<fltk3::ColorChooser*>(w)) return "ColorChooser";
   if (dynamic_cast<fltk3::HelpView*>(w)) return "HelpView";
@@ -472,6 +474,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   mrb_fltk3_browser_init(mrb, _class_fltk3);
   mrb_fltk3_text_init(mrb, _class_fltk3);
   mrb_fltk3_misc_init(mrb, _class_fltk3);
+  mrb_fltk3_tree_init(mrb, _class_fltk3);
 
   fltk3::register_images();
 }
