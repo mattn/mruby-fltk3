@@ -50,6 +50,7 @@ struct RClass* mrb_fltk3_class(mrb_state* mrb, const char* name);
 
 /* Look up the Ruby class that best matches the dynamic type of a widget. */
 const char* mrb_fltk3_widget_classname(fltk3::Widget* w);
+const char* mrb_fltk3_image_classname(fltk3::Image* image);
 
 /* Detach the Ruby instances of a widget and of all its descendants before
  * the underlying fltk3 objects are deleted. */

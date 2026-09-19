@@ -29,7 +29,7 @@ static mrb_value
 mrb_fltk3_widget_image_get(mrb_state *mrb, mrb_value self)
 {
   CONTEXT_SETUP(Widget);
-  return mrb_fltk3_Image_wrap(mrb, context->v->image(), "Image");
+  return mrb_fltk3_Image_wrap(mrb, context->v->image(), mrb_fltk3_image_classname(context->v->image()));
 }
 
 static mrb_value
@@ -46,7 +46,7 @@ static mrb_value
 mrb_fltk3_widget_deimage_get(mrb_state *mrb, mrb_value self)
 {
   CONTEXT_SETUP(Widget);
-  return mrb_fltk3_Image_wrap(mrb, context->v->deimage(), "Image");
+  return mrb_fltk3_Image_wrap(mrb, context->v->deimage(), mrb_fltk3_image_classname(context->v->deimage()));
 }
 
 static mrb_value
