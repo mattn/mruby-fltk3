@@ -300,6 +300,30 @@ mrb_fltk3_set_fonts(mrb_state *mrb, mrb_value self)
   return mrb_fixnum_value(fltk3::set_fonts(RSTRING_CSTR(mrb, s)));
 }
 
+/* set_font(face, name)  -> use the system font "name" for face
+ * set_font(face, from)  -> make face an alias of another face */
+static mrb_value
+mrb_fltk3_set_font(mrb_state *mrb, mrb_value self)
+{
+  mrb_int face;
+  mrb_value name;
+  mrb_get_args(mrb, "io", &face, &name);
+  if (mrb_string_p(name)) {
+    /* fltk3 keeps the pointer, so the string must stay alive */
+    mrb_value fonts = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "__fonts__"));
+    if (mrb_nil_p(fonts)) {
+      fonts = mrb_hash_new(mrb);
+      mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "__fonts__"), fonts);
+    }
+    name = mrb_str_dup(mrb, name);
+    mrb_hash_set(mrb, fonts, mrb_fixnum_value(face), name);
+    fltk3::set_font((fltk3::Font) face, RSTRING_CSTR(mrb, name));
+  } else {
+    fltk3::set_font((fltk3::Font) face, (fltk3::Font) mrb_integer(name));
+  }
+  return mrb_nil_value();
+}
+
 static mrb_value
 mrb_fltk3_font_name(mrb_state *mrb, mrb_value self)
 {
@@ -335,6 +359,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   mrb_define_module_function(mrb, _class_fltk3, "ask", mrb_fltk3_ask, MRB_ARGS_REQ(1));
   mrb_define_module_function(mrb, _class_fltk3, "choice", mrb_fltk3_choice, MRB_ARGS_REQ(3) | MRB_ARGS_OPT(1));
   mrb_define_module_function(mrb, _class_fltk3, "set_fonts", mrb_fltk3_set_fonts, MRB_ARGS_REQ(1));
+  mrb_define_module_function(mrb, _class_fltk3, "set_font", mrb_fltk3_set_font, MRB_ARGS_REQ(2));
   mrb_define_module_function(mrb, _class_fltk3, "font_name", mrb_fltk3_font_name, MRB_ARGS_REQ(1));
   mrb_define_module_function(mrb, _class_fltk3, "file_chooser", mrb_fltk3_file_chooser, MRB_ARGS_REQ(2));
   ARENA_RESTORE;
