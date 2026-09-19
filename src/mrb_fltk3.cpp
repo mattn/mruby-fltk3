@@ -31,6 +31,10 @@
 #include <fltk3/ReturnButton.h>
 #include <fltk3/RoundButton.h>
 #include <fltk3/SelectBrowser.h>
+#include <fltk3/HoldBrowser.h>
+#include <fltk3/MultiBrowser.h>
+#include <fltk3/FileBrowser.h>
+#include <fltk3/CheckBrowser.h>
 #include <fltk3/SharedImage.h>
 #include <fltk3/TextDisplay.h>
 #include <fltk3/TextEditor.h>
@@ -173,8 +177,13 @@ mrb_fltk3_widget_classname(fltk3::Widget* w)
   if (dynamic_cast<fltk3::Window*>(w)) return "Window";
   if (dynamic_cast<fltk3::TextEditor*>(w)) return "TextEditor";
   if (dynamic_cast<fltk3::TextDisplay*>(w)) return "TextDisplay";
+  if (dynamic_cast<fltk3::FileBrowser*>(w)) return "FileBrowser";
   if (dynamic_cast<fltk3::SelectBrowser*>(w)) return "SelectBrowser";
+  if (dynamic_cast<fltk3::HoldBrowser*>(w)) return "HoldBrowser";
+  if (dynamic_cast<fltk3::MultiBrowser*>(w)) return "MultiBrowser";
   if (dynamic_cast<fltk3::Browser*>(w)) return "Browser";
+  if (dynamic_cast<fltk3::CheckBrowser*>(w)) return "CheckBrowser";
+  if (dynamic_cast<fltk3::Browser_*>(w)) return "Browser_";
   if (dynamic_cast<fltk3::PackedGroup*>(w)) return "PackedGroup";
   if (dynamic_cast<fltk3::TabGroup*>(w)) return "TabGroup";
   if (dynamic_cast<fltk3::TiledGroup*>(w)) return "TiledGroup";
