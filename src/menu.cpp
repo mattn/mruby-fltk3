@@ -151,12 +151,10 @@ _mrb_fltk3_menu_callback(fltk3::Widget* w, void* d)
       if (items[i].user_data() == d) { item = items + i; break; }
     }
   }
-  int ai = mrb_gc_arena_save(mrb);
   mrb_value args[2];
   args[0] = data->instance;
   args[1] = mrb_fltk3_menuitem_new(mrb, item);
-  mrb_yield_argv(mrb, proc, 2, args);
-  mrb_gc_arena_restore(mrb, ai);
+  mrb_fltk3_call(mrb, proc, 2, args);
 }
 
 /* Store a block for a menu item and return the user_data to attach. */

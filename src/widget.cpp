@@ -1,4 +1,5 @@
 #include "mrb_fltk3.h"
+#include <mruby/proc.h>
 #include <fltk3/Box.h>
 #include <fltk3/Group.h>
 #include <fltk3/Window.h>
@@ -70,9 +71,7 @@ _mrb_fltk3_widget_callback(fltk3::Widget* v, void* data)
   if (mrb_nil_p(proc)) return;
   args[0] = context->instance;
   args[1] = value;
-  int ai = mrb_gc_arena_save(mrb);
-  mrb_yield_argv(mrb, proc, 2, args);
-  mrb_gc_arena_restore(mrb, ai);
+  mrb_fltk3_call(mrb, proc, 2, args);
 }
 
 /* callback { |widget, user_data| ... }
@@ -328,6 +327,135 @@ mrb_fltk3_widget_when_set(mrb_state *mrb, mrb_value self)
   return mrb_nil_value();
 }
 
+/* draw / handle overrides ------------------------------------------------
+ *
+ * A widget's draw() is resolved in this order:
+ *   1. a block installed with widget.draw { |w| ... }
+ *   2. a Ruby method "draw" defined by a subclass
+ *   3. the native drawing of the fltk3 class
+ * handle(event) works the same way with widget.handle { |w, event| ... }. */
+
+static mrb_value mrb_fltk3_widget_draw(mrb_state *mrb, mrb_value self);
+static mrb_value mrb_fltk3_widget_handle(mrb_state *mrb, mrb_value self);
+
+static bool
+mrb_fltk3_overridden(mrb_state* mrb, mrb_value self, const char* name, mrb_func_t base)
+{
+  struct RClass* c = mrb_class(mrb, self);
+  mrb_method_t m = mrb_method_search_vm(mrb, &c, mrb_intern_cstr(mrb, name));
+  if (MRB_METHOD_UNDEF_P(m)) return false;
+  return !(MRB_METHOD_CFUNC_P(m) && MRB_METHOD_CFUNC(m) == base);
+}
+
+void
+mrb_fltk3_widget_draw_hook(fltk3::Widget* w, MrbOverridable* o)
+{
+  mrb_state* mrb = mrb_fltk3_state;
+  mrb_value instance = mrb ? mrb_fltk3_registered(mrb, w) : mrb_nil_value();
+  if (mrb_nil_p(instance)) {
+    o->default_draw();
+    return;
+  }
+  mrb_value proc = mrb_iv_get(mrb, instance, mrb_intern_lit(mrb, "draw_proc"));
+  if (!mrb_nil_p(proc)) {
+    mrb_fltk3_call(mrb, proc, 1, &instance);
+  } else if (mrb_fltk3_overridden(mrb, instance, "draw", mrb_fltk3_widget_draw)) {
+    mrb_fltk3_send(mrb, instance, "draw", 0, NULL);
+  } else {
+    o->default_draw();
+  }
+}
+
+int
+mrb_fltk3_widget_handle_hook(fltk3::Widget* w, MrbOverridable* o, int event)
+{
+  mrb_state* mrb = mrb_fltk3_state;
+  mrb_value instance = mrb ? mrb_fltk3_registered(mrb, w) : mrb_nil_value();
+  if (mrb_nil_p(instance)) return o->default_handle(event);
+  mrb_value proc = mrb_iv_get(mrb, instance, mrb_intern_lit(mrb, "handle_proc"));
+  mrb_value ret;
+  if (!mrb_nil_p(proc)) {
+    mrb_value args[2];
+    args[0] = instance;
+    args[1] = mrb_fixnum_value(event);
+    ret = mrb_fltk3_call(mrb, proc, 2, args);
+  } else if (mrb_fltk3_overridden(mrb, instance, "handle", mrb_fltk3_widget_handle)) {
+    mrb_value arg = mrb_fixnum_value(event);
+    ret = mrb_fltk3_send(mrb, instance, "handle", 1, &arg);
+  } else {
+    return o->default_handle(event);
+  }
+  if (mrb_integer_p(ret)) return (int) mrb_integer(ret);
+  return mrb_test(ret) ? 1 : 0;
+}
+
+/* draw           -> native drawing of the widget (for use from an override)
+ * draw { |w| }   -> install a drawing block */
+static mrb_value
+mrb_fltk3_widget_draw(mrb_state *mrb, mrb_value self)
+{
+  CONTEXT_SETUP(Widget);
+  mrb_value b = mrb_nil_value();
+  mrb_get_args(mrb, "&", &b);
+  if (!mrb_nil_p(b)) {
+    mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "draw_proc"), b);
+    return mrb_nil_value();
+  }
+  MrbOverridable* o = dynamic_cast<MrbOverridable*>(context->v);
+  if (o) o->default_draw(); else context->v->draw();
+  return mrb_nil_value();
+}
+
+/* handle(event)           -> native event handling, returns true if consumed
+ * handle { |w, event| }   -> install an event handler block */
+static mrb_value
+mrb_fltk3_widget_handle(mrb_state *mrb, mrb_value self)
+{
+  CONTEXT_SETUP(Widget);
+  mrb_value b = mrb_nil_value();
+  mrb_int event = 0;
+  mrb_int argc = mrb_get_args(mrb, "&|i", &b, &event);
+  if (!mrb_nil_p(b)) {
+    mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "handle_proc"), b);
+    return mrb_nil_value();
+  }
+  if (argc < 1) mrb_raise(mrb, E_ARGUMENT_ERROR, "event expected");
+  MrbOverridable* o = dynamic_cast<MrbOverridable*>(context->v);
+  int r = o ? o->default_handle((int) event) : context->v->handle((int) event);
+  return mrb_bool_value(r != 0);
+}
+
+static mrb_value
+mrb_fltk3_widget_draw_box(mrb_state *mrb, mrb_value self)
+{
+  CONTEXT_SETUP(Widget);
+  mrb_value box = mrb_nil_value();
+  mrb_int x, y, w, h, c;
+  mrb_int argc = mrb_get_args(mrb, "|oiiiii", &box, &x, &y, &w, &h, &c);
+  MrbOverridable* o = dynamic_cast<MrbOverridable*>(context->v);
+  if (!o) mrb_raise(mrb, E_RUNTIME_ERROR, "widget was not created from Ruby");
+  if (argc == 0) o->default_draw_box();
+  else if (argc == 2) o->default_draw_box(mrb_fltk3_Box_ptr(mrb, box), 0, 0, context->v->w(), context->v->h(), (fltk3::Color) x);
+  else if (argc == 6) o->default_draw_box(mrb_fltk3_Box_ptr(mrb, box), x, y, w, h, (fltk3::Color) c);
+  else mrb_raise(mrb, E_ARGUMENT_ERROR, "wrong number of arguments");
+  return mrb_nil_value();
+}
+
+static mrb_value
+mrb_fltk3_widget_draw_label(mrb_state *mrb, mrb_value self)
+{
+  CONTEXT_SETUP(Widget);
+  mrb_int x, y, w, h, a;
+  mrb_int argc = mrb_get_args(mrb, "|iiiii", &x, &y, &w, &h, &a);
+  MrbOverridable* o = dynamic_cast<MrbOverridable*>(context->v);
+  if (!o) mrb_raise(mrb, E_RUNTIME_ERROR, "widget was not created from Ruby");
+  if (argc == 0) o->default_draw_label();
+  else if (argc == 4) o->default_draw_label(x, y, w, h, context->v->align());
+  else if (argc == 5) o->default_draw_label(x, y, w, h, (fltk3::Align) a);
+  else mrb_raise(mrb, E_ARGUMENT_ERROR, "wrong number of arguments");
+  return mrb_nil_value();
+}
+
 static mrb_value
 mrb_fltk3_widget_equal(mrb_state *mrb, mrb_value self)
 {
@@ -347,6 +475,10 @@ mrb_fltk3_widget_init(mrb_state* mrb, struct RClass* _class_fltk3)
   MRB_SET_INSTANCE_TT(_class_fltk3_Widget, MRB_TT_DATA);
   mrb_define_method(mrb, _class_fltk3_Widget, "initialize", mrb_fltk3_Widget_init, MRB_ARGS_ANY());
   mrb_define_method(mrb, _class_fltk3_Widget, "==", mrb_fltk3_widget_equal, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, _class_fltk3_Widget, "draw", mrb_fltk3_widget_draw, MRB_ARGS_BLOCK());
+  mrb_define_method(mrb, _class_fltk3_Widget, "handle", mrb_fltk3_widget_handle, MRB_ARGS_OPT(1) | MRB_ARGS_BLOCK());
+  mrb_define_method(mrb, _class_fltk3_Widget, "draw_box", mrb_fltk3_widget_draw_box, MRB_ARGS_OPT(6));
+  mrb_define_method(mrb, _class_fltk3_Widget, "draw_label", mrb_fltk3_widget_draw_label, MRB_ARGS_OPT(5));
   DEFINE_VOID_METHOD(Widget, Widget, redraw);
   DEFINE_VOID_METHOD(Widget, Widget, redraw_label);
   DEFINE_VOID_METHOD(Widget, Widget, show);

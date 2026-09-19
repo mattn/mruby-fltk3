@@ -287,7 +287,7 @@ _mrb_fltk3_textbuffer_modify_callback(int pos, int nInserted, int nDeleted, int 
   args[3] = mrb_fixnum_value(nRestyled);
   args[4] = deletedText ? mrb_str_new_cstr(mrb, deletedText) : mrb_nil_value();
   for (mrb_int i = 0; i < RARRAY_LEN(callbacks); i++) {
-    mrb_yield_argv(mrb, mrb_ary_ref(mrb, callbacks, i), 5, args);
+    mrb_fltk3_call(mrb, mrb_ary_ref(mrb, callbacks, i), 5, args);
   }
   mrb_gc_arena_restore(mrb, ai);
 }

@@ -1,4 +1,5 @@
 #include "mrb_fltk3.h"
+#include <mruby/error.h>
 #include <fltk3/Browser.h>
 #include <fltk3/Button.h>
 #include <fltk3/CheckButton.h>
@@ -229,6 +230,80 @@ mrb_fltk3_widget_classname(fltk3::Widget* w)
   return "Widget";
 }
 
+mrb_state* mrb_fltk3_state = NULL;
+
+static mrb_value
+mrb_fltk3_pending_exception(mrb_state* mrb, mrb_value set)
+{
+  struct RClass* _class_fltk3 = mrb_module_get(mrb, "FLTK3");
+  mrb_value exc = mrb_iv_get(mrb, mrb_obj_value(_class_fltk3), mrb_intern_lit(mrb, "__exception__"));
+  mrb_iv_set(mrb, mrb_obj_value(_class_fltk3), mrb_intern_lit(mrb, "__exception__"), set);
+  return exc;
+}
+
+static void
+mrb_fltk3_stash_exception(mrb_state* mrb, mrb_value exc)
+{
+  mrb->exc = NULL;
+  /* keep the first one */
+  mrb_value pending = mrb_fltk3_pending_exception(mrb, exc);
+  if (!mrb_nil_p(pending)) mrb_fltk3_pending_exception(mrb, pending);
+}
+
+typedef struct {
+  mrb_value proc;
+  mrb_value self;
+  mrb_sym mid;
+  mrb_int argc;
+  const mrb_value* argv;
+} mrb_fltk3_call_data;
+
+static mrb_value
+mrb_fltk3_call_body(mrb_state* mrb, void* p)
+{
+  mrb_fltk3_call_data* data = (mrb_fltk3_call_data*) p;
+  if (data->mid) return mrb_funcall_argv(mrb, data->self, data->mid, data->argc, data->argv);
+  return mrb_yield_argv(mrb, data->proc, data->argc, data->argv);
+}
+
+/* fltk3 calls back into Ruby while the VM is suspended inside FLTK3.run, so
+ * an exception must not unwind through the native frames; catch it here. */
+static mrb_value
+mrb_fltk3_call_protected(mrb_state* mrb, mrb_fltk3_call_data* data)
+{
+  int ai = mrb_gc_arena_save(mrb);
+  mrb_bool error = FALSE;
+  mrb_value ret = mrb_protect_error(mrb, mrb_fltk3_call_body, data, &error);
+  if (error) {
+    mrb_fltk3_stash_exception(mrb, ret);
+    ret = mrb_nil_value();
+  }
+  mrb_gc_arena_restore(mrb, ai);
+  return ret;
+}
+
+mrb_value
+mrb_fltk3_call(mrb_state* mrb, mrb_value proc, mrb_int argc, const mrb_value* argv)
+{
+  if (mrb_nil_p(proc)) return mrb_nil_value();
+  mrb_fltk3_call_data data = { proc, mrb_nil_value(), 0, argc, argv };
+  return mrb_fltk3_call_protected(mrb, &data);
+}
+
+mrb_value
+mrb_fltk3_send(mrb_state* mrb, mrb_value self, const char* name, mrb_int argc, const mrb_value* argv)
+{
+  mrb_fltk3_call_data data = { mrb_nil_value(), self, mrb_intern_cstr(mrb, name), argc, argv };
+  return mrb_fltk3_call_protected(mrb, &data);
+}
+
+void
+mrb_fltk3_check_exception(mrb_state* mrb)
+{
+  mrb_value exc = mrb_fltk3_pending_exception(mrb, mrb_nil_value());
+  if (!mrb_nil_p(exc)) mrb_exc_raise(mrb, exc);
+}
+
 void
 mrb_fltk3_widget_forget(mrb_state* mrb, fltk3::Widget* w)
 {
@@ -265,10 +340,16 @@ mrb_fltk3_arg_check(const char* t, mrb_int argc, mrb_value* argv)
 /*********************************************************
  * FLTK3::*
  *********************************************************/
+/* Same loop as fltk3::run(), but stops to re-raise an exception raised in
+ * a callback. */
 static mrb_value
 mrb_fltk3_run(mrb_state *mrb, mrb_value self)
 {
-  return mrb_fixnum_value(fltk3::run());
+  while (fltk3::first_window()) {
+    fltk3::wait();
+    mrb_fltk3_check_exception(mrb);
+  }
+  return mrb_fixnum_value(0);
 }
 
 static mrb_value
@@ -350,6 +431,7 @@ void
 mrb_mruby_fltk3_gem_init(mrb_state* mrb)
 {
   ARENA_SAVE;
+  mrb_fltk3_state = mrb;
   struct RClass* _class_fltk3 = mrb_define_module(mrb, "FLTK3");
   mrb_define_module_function(mrb, _class_fltk3, "run", mrb_fltk3_run, MRB_ARGS_NONE());
   mrb_define_module_function(mrb, _class_fltk3, "alert", mrb_fltk3_alert, MRB_ARGS_REQ(1));
@@ -362,6 +444,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
 
   mrb_fltk3_constants_init(mrb, _class_fltk3);
   mrb_fltk3_app_init(mrb, _class_fltk3);
+  mrb_fltk3_draw_init(mrb, _class_fltk3);
   mrb_fltk3_image_init(mrb, _class_fltk3);
   mrb_fltk3_box_init(mrb, _class_fltk3);
   mrb_fltk3_widget_init(mrb, _class_fltk3);
