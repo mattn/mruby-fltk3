@@ -494,3 +494,50 @@ assert('exception raised in a callback propagates from FLTK3.run') do
   win.hide
   assert_equal "boom", e.message
 end
+
+assert('FLTK3::Clock, Chart and Positioner') do
+  c = FLTK3::Clock.new(0, 0, 100, 100)
+  c.value(10, 20, 30)
+  assert_equal [10, 20, 30], [c.hour, c.minute, c.second]
+
+  ch = FLTK3::Chart.new(0, 0, 100, 100)
+  ch.type = FLTK3::BAR_CHART
+  ch.add(1.0, "a", FLTK3::RED).add(2.5, "b")
+  ch.insert(1, 0.5)
+  assert_equal 3, ch.size
+  ch.bounds(0, 10)
+  assert_equal [0.0, 10.0], ch.bounds
+  ch.clear
+  assert_equal 0, ch.size
+
+  po = FLTK3::Positioner.new(0, 0, 100, 100)
+  po.xbounds(0, 10)
+  po.ybounds(0, 5)
+  po.value(3, 4)
+  assert_equal [3.0, 4.0], po.value
+end
+
+assert('FLTK3::InputChoice and ColorChooser') do
+  ic = FLTK3::InputChoice.new(0, 0, 100, 25)
+  ic << "one" << "two"
+  ic.value = 1
+  assert_equal "two", ic.value
+  ic.value = "custom"
+  assert_equal "custom", ic.input.value
+  assert_kind_of FLTK3::MenuButton, ic.menubutton
+
+  cc = FLTK3::ColorChooser.new(0, 0, 200, 100)
+  cc.rgb(1.0, 0.0, 0.0)
+  assert_equal [1.0, 0.0, 0.0], cc.rgb
+  assert_equal 0.0, cc.hue
+end
+
+assert('FLTK3::FileChooser') do
+  fc = FLTK3::FileChooser.new(".", "*.rb", FLTK3::FileChooser::MULTI, "pick")
+  assert_equal FLTK3::FileChooser::MULTI, fc.type
+  assert_equal "*.rb", fc.filter
+  assert_equal "pick", fc.label
+  assert_false fc.shown
+  fc.directory = "/tmp"
+  assert_equal "/tmp", fc.directory
+end
