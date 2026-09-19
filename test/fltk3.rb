@@ -237,3 +237,51 @@ assert('FLTK3::Input editing') do
   assert_equal FLTK3::MULTILINE_INPUT_WRAP, m.type
   assert_equal FLTK3::INT_INPUT, FLTK3::IntInput.new(0, 0, 1, 1).input_type
 end
+
+assert('FLTK3::Button value') do
+  b = FLTK3::ToggleButton.new(0, 0, 10, 10)
+  assert_false b.value
+  b.value = true
+  assert_true b.value?
+  b.clear
+  assert_false b.value
+  b.shortcut = FLTK3::ALT | 120
+  assert_equal FLTK3::ALT | 120, b.shortcut
+  r1 = FLTK3::RadioButton.new(0, 0, 10, 10)
+  assert_equal FLTK3::RADIO_BUTTON, r1.type
+end
+
+assert('FLTK3::MenuBar items and callbacks') do
+  mb = FLTK3::MenuBar.new(0, 0, 300, 25)
+  picked = nil
+  mb.add("File/Open", "^o") { |m, item| picked = item.label }
+  mb.add("File/Quit", FLTK3::CTRL | 113, FLTK3::MENU_DIVIDER) { |m, item| picked = item.label }
+  mb.add("Edit/Check", 0, FLTK3::MENU_TOGGLE)
+  assert_equal 2, mb.find_index("File/Quit")
+  assert_equal ["File", "Open", "Quit", nil, "Edit", "Check", nil, nil], mb.items.map(&:label)
+  quit = mb.find_item("File/Quit")
+  assert_equal FLTK3::CTRL | 113, quit.shortcut
+  assert_equal "File/Quit", mb.item_pathname(quit)
+  quit.do_callback(mb)
+  assert_equal "Quit", picked
+  mb[1].do_callback(mb)
+  assert_equal "Open", picked
+  check = mb.find_item("Edit/Check")
+  assert_true check.checkbox
+  check.set
+  assert_true check.value
+  mb.remove(1)
+  assert_equal "Quit", mb[1].label
+  mb.clear
+  assert_equal 0, mb.size
+end
+
+assert('FLTK3::Choice') do
+  c = FLTK3::Choice.new(0, 0, 100, 25)
+  c.add("one")
+  c.add("two")
+  c.value = 1
+  assert_equal 1, c.value
+  assert_equal "two", c.text
+  assert_kind_of FLTK3::Menu_, c
+end
