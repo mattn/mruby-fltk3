@@ -16,6 +16,7 @@
 #include <fltk3/Image.h>
 #include <fltk3/MenuItem.h>
 #include <fltk3/TextBuffer.h>
+#include <fltk3/FileChooser.h>
 
 #define DECLARE_TYPE(x) \
 typedef struct { \
@@ -34,6 +35,7 @@ DECLARE_TYPE(Box)
 DECLARE_TYPE(TextBuffer)
 DECLARE_TYPE(Image)
 DECLARE_TYPE(MenuItem)
+DECLARE_TYPE(FileChooser)
 
 /* Instances of the FLTK3 classes are MRB_TT_DATA objects whose data pointer
  * is one of the context structs above.  Wrapping a raw fltk3 pointer that
@@ -276,6 +278,7 @@ mrb_fltk3_ ## x ## _init(mrb_state *mrb, mrb_value self)                  \
 void mrb_fltk3_constants_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_app_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_draw_init(mrb_state* mrb, struct RClass* _class_fltk3);
+void mrb_fltk3_misc_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_widget_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_image_init(mrb_state* mrb, struct RClass* _class_fltk3);
 void mrb_fltk3_box_init(mrb_state* mrb, struct RClass* _class_fltk3);

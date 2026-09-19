@@ -53,6 +53,13 @@
 #include <fltk3/Adjuster.h>
 #include <fltk3/Spinner.h>
 #include <fltk3/Progress.h>
+#include <fltk3/Clock.h>
+#include <fltk3/RoundClock.h>
+#include <fltk3/Chart.h>
+#include <fltk3/Positioner.h>
+#include <fltk3/InputChoice.h>
+#include <fltk3/ColorChooser.h>
+#include <fltk3/HelpView.h>
 #include <fltk3/Window.h>
 #include <fltk3/ask.h>
 #include <fltk3/run.h>
@@ -125,6 +132,7 @@ DEFINE_TYPE(Box)
 DEFINE_TYPE(TextBuffer)
 DEFINE_TYPE(Image)
 DEFINE_TYPE(MenuItem)
+DEFINE_TYPE(FileChooser)
 
 static mrb_value
 mrb_fltk3_registry(mrb_state* mrb)
@@ -191,6 +199,9 @@ mrb_fltk3_widget_classname(fltk3::Widget* w)
   if (dynamic_cast<fltk3::ScrollGroup*>(w)) return "ScrollGroup";
   if (dynamic_cast<fltk3::WizardGroup*>(w)) return "WizardGroup";
   if (dynamic_cast<fltk3::Spinner*>(w)) return "Spinner";
+  if (dynamic_cast<fltk3::InputChoice*>(w)) return "InputChoice";
+  if (dynamic_cast<fltk3::ColorChooser*>(w)) return "ColorChooser";
+  if (dynamic_cast<fltk3::HelpView*>(w)) return "HelpView";
   if (dynamic_cast<fltk3::Group*>(w)) return "Group";
   if (dynamic_cast<fltk3::MenuBar*>(w)) return "MenuBar";
   if (dynamic_cast<fltk3::MenuButton*>(w)) return "MenuButton";
@@ -227,6 +238,11 @@ mrb_fltk3_widget_classname(fltk3::Widget* w)
   if (dynamic_cast<fltk3::Adjuster*>(w)) return "Adjuster";
   if (dynamic_cast<fltk3::Valuator*>(w)) return "Valuator";
   if (dynamic_cast<fltk3::Progress*>(w)) return "Progress";
+  if (dynamic_cast<fltk3::RoundClock*>(w)) return "RoundClock";
+  if (dynamic_cast<fltk3::Clock*>(w)) return "Clock";
+  if (dynamic_cast<fltk3::ClockOutput*>(w)) return "ClockOutput";
+  if (dynamic_cast<fltk3::Chart*>(w)) return "Chart";
+  if (dynamic_cast<fltk3::Positioner*>(w)) return "Positioner";
   return "Widget";
 }
 
@@ -455,6 +471,7 @@ mrb_mruby_fltk3_gem_init(mrb_state* mrb)
   mrb_fltk3_menu_init(mrb, _class_fltk3);
   mrb_fltk3_browser_init(mrb, _class_fltk3);
   mrb_fltk3_text_init(mrb, _class_fltk3);
+  mrb_fltk3_misc_init(mrb, _class_fltk3);
 
   fltk3::register_images();
 }
